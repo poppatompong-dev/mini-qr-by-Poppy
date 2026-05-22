@@ -4399,8 +4399,8 @@ packages:
     resolution: {integrity: sha512-42AtmgqjV+X1VpdOfyTGOYRi0/zsoLqtXQckTmqTeybT+BDIbM/Guxo7x3pE2vtpr1ok6xRqM9OpBe+Jyoqyww==}
     engines: {node: '>=18'}
 
-  ws@8.20.0:
-    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
+  ws@8.20.1:
+    resolution: {integrity: sha512-It4dO0K5v//JtTXuPkfEOaI3uUN87iYPnqo/ZzqCoG3g8uhA66QUMs/SrM0YK7/NAu+r4LMh/9dq2A7k+rHs+w==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -5808,7 +5808,7 @@ snapshots:
       recast: 0.23.11
       semver: 7.8.0
       util: 0.12.5
-      ws: 8.20.0
+      ws: 8.20.1
     optionalDependencies:
       prettier: 3.8.3
     transitivePeerDependencies:
@@ -6120,7 +6120,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/node@20.19.40)(@vitest/browser@3.2.4)(terser@5.47.1)
-      ws: 8.20.0
+      ws: 8.20.1
     optionalDependencies:
       playwright: 1.59.1
     transitivePeerDependencies:
@@ -8980,7 +8980,7 @@ snapshots:
       string-width: 7.2.0
       strip-ansi: 7.2.0
 
-  ws@8.20.0: {}
+  ws@8.20.1: {}
 
   xml-name-validator@4.0.0: {}
 
