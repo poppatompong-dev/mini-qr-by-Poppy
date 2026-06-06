@@ -11,14 +11,20 @@
   transition-property: background-color, color;
   --scrollbar-width: 8px;
 
-  /* Color System (OKLCH Slate & Indigo) */
-  --bg-slate: oklch(98% 0.005 240);
-  --bg-card: rgba(255, 255, 255, 0.72);
-  --text-primary: oklch(25% 0.01 240);
-  --text-muted: oklch(60% 0.01 240);
-  --border-zinc: oklch(92% 0.005 240);
-  --accent-blue: oklch(56% 0.21 255);
-  --accent-hover: oklch(50% 0.21 255);
+  /* Color System (Titanium & Obsidian) */
+  --bg-slate: oklch(99% 0.002 240);
+  --bg-card: rgba(255, 255, 255, 0.65);
+  --text-primary: oklch(20% 0.005 240);
+  --text-muted: oklch(50% 0.008 240);
+  --border-zinc: oklch(93% 0.005 240);
+  --accent-blue: oklch(52% 0.21 260);
+  --accent-hover: oklch(46% 0.21 260);
+  --accent-gold: oklch(86% 0.04 80);
+  --accent-gold-hover: oklch(80% 0.05 80);
+
+  /* Kinetic Timing / Easings */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 
   @media screen and (prefers-reduced-motion: reduce), (update: slow) {
     transition-duration: 0s;
@@ -26,13 +32,13 @@
 }
 
 .dark {
-  --bg-slate: oklch(14% 0.01 240);
-  --bg-card: rgba(18, 18, 20, 0.78);
-  --text-primary: oklch(96% 0.005 240);
-  --text-muted: oklch(70% 0.01 240);
-  --border-zinc: oklch(28% 0.01 240);
-  --accent-blue: oklch(62% 0.19 255);
-  --accent-hover: oklch(68% 0.19 255);
+  --bg-slate: oklch(10% 0.003 240);
+  --bg-card: rgba(15, 15, 18, 0.65);
+  --text-primary: oklch(98% 0.002 240);
+  --text-muted: oklch(72% 0.006 240);
+  --border-zinc: oklch(20% 0.008 240);
+  --accent-blue: oklch(56% 0.19 260);
+  --accent-hover: oklch(62% 0.19 260);
 }
 
 ::selection {
@@ -244,17 +250,15 @@ input[type='checkbox']:hover {
   @apply h-8 w-1 bg-slate-300 dark:bg-slate-700;
 }
 
-/* Premium Background Grid & Subtle Abstract Gradient Pattern */
-@keyframes floatBg {
-  0% {
-    transform: scale(1) translate(0, 0);
-  }
-  50% {
-    transform: scale(1.05) translate(1%, -1%);
-  }
-  100% {
-    transform: scale(1) translate(0, 0);
-  }
+/* Premium Background Grid & Subtle Kinetic Mesh Lights */
+@keyframes floatGlow1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8vw, 6vh) scale(1.15); }
+}
+
+@keyframes floatGlow2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-6vw, -8vh) scale(1.1); }
 }
 
 body {
@@ -265,19 +269,30 @@ body {
   background-size: 24px 24px;
 }
 
+body::after {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.035) 0%, transparent 70%); /* Sapphire blue */
+  pointer-events: none;
+  z-index: -1;
+  animation: floatGlow1 25s ease-in-out infinite;
+}
+
 body::before {
   content: '';
   position: fixed;
-  inset: -5%;
-  background-image: url('./assets/abstract_bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.15; /* Increased opacity for clear yet non-distracting visibility */
+  bottom: -10%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(223, 200, 165, 0.025) 0%, transparent 70%); /* Champagne gold */
   pointer-events: none;
   z-index: -1;
-  transition: opacity 0.3s ease;
-  animation: floatBg 30s ease-in-out infinite;
+  animation: floatGlow2 35s ease-in-out infinite;
 }
 
 .dark body {
@@ -287,9 +302,12 @@ body::before {
   background-size: 24px 24px;
 }
 
+.dark body::after {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 75%);
+}
+
 .dark body::before {
-  opacity: 0.20; /* Blends beautifully with the dark slate tone */
-  filter: brightness(0.65) contrast(1.1) saturate(0.95);
+  background: radial-gradient(circle, rgba(223, 200, 165, 0.045) 0%, transparent 75%);
 }
 
 /* Premium Glassmorphism Card Utility */
@@ -299,8 +317,8 @@ body::before {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-zinc) !important;
   border-radius: 12px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.01);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s var(--ease-out-expo);
 }
 
 .dark .glass-card {
@@ -309,13 +327,13 @@ body::before {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-zinc) !important;
   border-radius: 12px;
-  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s var(--ease-out-expo);
 }
 
 /* Custom premium hover and animation effects */
 .button, .secondary-button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s var(--ease-out-quint);
 }
 
 .button:hover:not(:disabled), .secondary-button:hover:not(:disabled) {
@@ -347,9 +365,21 @@ body::before {
   right: 0;
   height: 2.5px;
   background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
-  box-shadow: 0 0 10px var(--accent-blue), 0 0 4px var(--accent-blue);
-  animation: scanline 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 12px 3px var(--accent-blue), 0 0 4px var(--accent-blue);
+  animation: scanline 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   z-index: 10;
+  pointer-events: none;
+}
+
+.glowing-scanline::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 5%;
+  right: 5%;
+  height: 40px;
+  background: linear-gradient(180deg, transparent, rgba(29, 78, 216, 0.15));
+  filter: blur(4px);
   pointer-events: none;
 }
 
@@ -363,9 +393,59 @@ body::before {
     transition: none !important;
     transform: none !important;
   }
-  body::before {
+  body::before, body::after {
     animation: none !important;
   }
+}
+
+/* QR Code Entrance Pulse & Blur Effect */
+@keyframes qrEntrance {
+  0% {
+    transform: scale(0.96);
+    filter: blur(4px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1);
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+.qr-pulse-entrance {
+  animation: qrEntrance 0.35s var(--ease-out-expo) forwards;
+}
+
+/* CSV Upload Area Pulsing glow */
+.upload-dropzone-pulse {
+  animation: borderPulse 2s infinite ease-in-out;
+}
+
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: var(--border-zinc);
+    box-shadow: 0 0 0 0 rgba(29, 78, 216, 0);
+  }
+  55% {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 12px 2px rgba(29, 78, 216, 0.08);
+  }
+}
+
+/* Decoded Results Card Entrance Slide-up */
+@keyframes slideUp {
+  0% {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.scan-results-entrance {
+  animation: slideUp 0.4s var(--ease-out-expo) forwards;
 }
 
 

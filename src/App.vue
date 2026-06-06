@@ -84,23 +84,36 @@ const isModeToggleDisabled = computed(() => {
       <div class="flex items-center gap-6">
         <!-- Logo -->
         <div class="flex items-center gap-2">
-          <span class="size-6.5 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-[10px] font-black text-white shadow-md shadow-blue-500/10">QR</span>
+          <span class="flex size-7 items-center justify-center rounded-[6px] bg-[var(--accent-blue)] text-[9px] font-extrabold tracking-wider text-white shadow-[0_2px_8px_rgba(29,78,216,0.25)] dark:bg-[var(--accent-blue)]">QR</span>
           <div class="flex flex-col items-start leading-none">
-            <h1 class="bg-gradient-to-r from-zinc-800 to-zinc-600 bg-clip-text text-xl font-black tracking-tight text-transparent dark:from-zinc-100 dark:to-zinc-300">Mini-QR</h1>
-            <span class="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">by Poppy</span>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-lg font-bold tracking-[-0.03em] text-[var(--text-primary)]">MiniQR</h1>
+              <span class="bg-[var(--accent-gold)]/20 dark:bg-[var(--accent-gold)]/10 rounded px-1 py-0.5 text-[8px] font-bold text-[oklch(60%_0.04_80)] dark:text-[var(--accent-gold)]">PRO</span>
+            </div>
+            <span class="mt-0.5 text-[9px] font-semibold text-zinc-400 dark:text-zinc-500">by Poppy</span>
           </div>
         </div>
 
         <!-- Mode toggle button - only visible on desktop -->
         <div
-          class="bg-zinc-150/70 dark:bg-zinc-850/70 flex items-center gap-0.5 rounded-xl border border-zinc-200/50 p-0.5 shadow-sm backdrop-blur-sm dark:border-zinc-800/80"
+          class="relative flex w-[160px] items-center gap-0.5 rounded-xl border border-zinc-200/60 bg-zinc-100/80 p-1 shadow-sm backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/60"
         >
+          <!-- Sliding Indicator Pill -->
+          <div
+            class="duration-350 absolute inset-y-1 rounded-lg bg-white shadow-sm transition-all dark:bg-zinc-800"
+            :style="{
+              left: appMode === AppMode.Create ? '4px' : 'calc(50% + 1.5px)',
+              width: 'calc(50% - 5.5px)',
+              transitionTimingFunction: 'var(--ease-out-expo)'
+            }"
+          ></div>
+
           <button
             :class="[
-              'flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold outline-none transition-colors duration-300',
               appMode === AppMode.Create
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                : 'hover:text-zinc-850 text-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
             @click="setAppMode(AppMode.Create)"
             :disabled="isModeToggleDisabled"
@@ -111,10 +124,10 @@ const isModeToggleDisabled = computed(() => {
           </button>
           <button
             :class="[
-              'flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold outline-none transition-colors duration-300',
               appMode === AppMode.Scan
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                : 'hover:text-zinc-850 text-zinc-500 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
             @click="setAppMode(AppMode.Scan)"
             :disabled="isModeToggleDisabled"
@@ -128,7 +141,7 @@ const isModeToggleDisabled = computed(() => {
 
       <div class="flex items-center justify-end gap-2.5">
         <button
-          class="grid size-9 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-500 outline-none transition-all hover:scale-[1.03] hover:bg-zinc-50 hover:text-zinc-800 active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200"
+          class="dark-toggle-btn grid size-9 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-500 outline-none transition-all duration-300 hover:scale-105 hover:bg-zinc-50 hover:text-zinc-800 active:scale-[0.95] dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200"
           @click="toggleDarkModePreference"
           :aria-label="t('Toggle dark mode')"
         >
@@ -153,38 +166,53 @@ const isModeToggleDisabled = computed(() => {
     >
       <div class="flex justify-center">
         <div
-          class="relative flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-white/90 p-0.5 shadow-lg backdrop-blur-md transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-900/95"
+          class="duration-350 relative flex items-center gap-2 rounded-xl border border-zinc-200/80 bg-white/95 p-1 pr-2 shadow-lg backdrop-blur-md transition-all dark:border-zinc-800 dark:bg-zinc-900/95"
         >
-          <button
-            :class="[
-              'flex items-center gap-1 rounded-lg px-3.5 py-1 text-xs font-bold outline-none transition-all duration-200',
-              appMode === AppMode.Create
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400',
-              isHeaderCollapsed ? 'py-0.5 text-[10px]' : 'py-1 text-xs'
-            ]"
-            @click="setAppMode(AppMode.Create)"
-            :disabled="isModeToggleDisabled"
-            :aria-label="t('Switch to Create Mode')"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-            <span>{{ t('Create') }}</span>
-          </button>
-          <button
-            :class="[
-              'flex items-center gap-1 rounded-lg px-3.5 py-1 text-xs font-bold outline-none transition-all duration-200',
-              appMode === AppMode.Scan
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400',
-              isHeaderCollapsed ? 'py-0.5 text-[10px]' : 'py-1 text-xs'
-            ]"
-            @click="setAppMode(AppMode.Scan)"
-            :disabled="isModeToggleDisabled"
-            :aria-label="t('Switch to Scan Mode')"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>{{ t('Scan') }}</span>
-          </button>
+          <!-- Switcher buttons container with sliding pill -->
+          <div class="relative flex w-[160px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40">
+            <div
+              class="duration-350 absolute inset-y-0.5 rounded-[6px] bg-white shadow-sm transition-all dark:bg-zinc-700"
+              :style="{
+                left: appMode === AppMode.Create ? '2px' : 'calc(50% + 1px)',
+                width: 'calc(50% - 3px)',
+                transitionTimingFunction: 'var(--ease-out-expo)'
+              }"
+            ></div>
+
+            <button
+              :class="[
+                'relative z-10 flex flex-1 items-center justify-center gap-1 rounded-[6px] py-1 text-xs font-bold outline-none transition-colors duration-300',
+                appMode === AppMode.Create
+                  ? 'text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-400 dark:text-zinc-400',
+                isHeaderCollapsed ? 'py-0.5 text-[10px]' : 'py-1 text-xs'
+              ]"
+              @click="setAppMode(AppMode.Create)"
+              :disabled="isModeToggleDisabled"
+              :aria-label="t('Switch to Create Mode')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+              <span>{{ t('Create') }}</span>
+            </button>
+            <button
+              :class="[
+                'relative z-10 flex flex-1 items-center justify-center gap-1 rounded-[6px] py-1 text-xs font-bold outline-none transition-colors duration-300',
+                appMode === AppMode.Scan
+                  ? 'text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-400 dark:text-zinc-400',
+                isHeaderCollapsed ? 'py-0.5 text-[10px]' : 'py-1 text-xs'
+              ]"
+              @click="setAppMode(AppMode.Scan)"
+              :disabled="isModeToggleDisabled"
+              :aria-label="t('Switch to Scan Mode')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>{{ t('Scan') }}</span>
+            </button>
+          </div>
+
+          <!-- Divider line -->
+          <span class="h-5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
 
           <!-- Hamburger menu -->
           <MobileMenu
@@ -242,5 +270,14 @@ const isModeToggleDisabled = computed(() => {
 
 .header-collapsed button {
   transition: all 0.3s ease;
+}
+
+/* Theme toggle button spin hover */
+.dark-toggle-btn svg {
+  transition: transform 0.5s var(--ease-out-expo);
+}
+
+.dark-toggle-btn:hover svg {
+  transform: rotate(45deg) scale(1.08);
 }
 </style>

@@ -314,7 +314,7 @@ defineExpose({
 <template>
   <div class="relative mx-auto w-full max-w-xl">
     <!-- Decoded Results Card -->
-    <div v-if="capturedData" class="glass-card border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8">
+    <div v-if="capturedData" class="scan-results-entrance glass-card border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8">
       <div class="mb-6 flex flex-col items-center justify-center">
         <div class="mb-3 flex size-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
           <span v-html="qrCodeTypeIcon" class="inline-block size-6"></span>
@@ -397,11 +397,12 @@ defineExpose({
           <!-- Drag Dropzone -->
           <div
             :class="[
-              'cursor-pointer rounded-2xl border-2 border-dashed p-6 py-10 text-center outline-none transition-all',
+              'upload-dropzone-pulse duration-350 cursor-pointer rounded-2xl border-2 border-dashed p-6 py-10 text-center outline-none transition-all',
               isDraggingOver
-                ? 'scale-[1.01] border-blue-500 bg-blue-500/5 dark:bg-blue-950/10'
-                : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950/10 dark:hover:border-zinc-700'
+                ? 'scale-[1.01] border-[var(--accent-blue)] bg-blue-500/5 dark:bg-blue-950/10'
+                : 'hover:border-zinc-350 border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/10 dark:hover:border-zinc-700'
             ]"
+            :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
             @click="fileInput?.click()"
             @keyup.enter="fileInput?.click()"
             @keyup.space="fileInput?.click()"
@@ -410,7 +411,7 @@ defineExpose({
             @drop="handleDrop"
           >
             <div class="flex flex-col items-center gap-2.5">
-              <div class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500">
+              <div class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:bg-zinc-800 dark:text-zinc-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               </div>
               <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{ t('Upload QR Code Image') }}</p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
@@ -29,7 +29,17 @@ import {
   Trash2,
   Sparkles,
   UploadCloud,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet,
+  FileArchive,
+  FileImage,
+  FileAudio,
+  FileVideo,
+  FileCode,
+  File as FileIcon,
+  Plus,
+  X,
+  Edit3
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -91,12 +101,19 @@ interface UploadableFile {
   id: string
   file: File
   name: string
+  previewUrl?: string // image thumbnail preview Object URL
 }
 const filesToUpload = ref<UploadableFile[]>([])
 const uploading = ref(false)
 const uploadProgress = ref('')
 const uploadError = ref('')
 const filesInputRef = ref<HTMLInputElement | null>(null)
+
+// Custom note and custom ZIP name state
+const showNoteEditor = ref(false)
+const noteTitle = ref('')
+const noteContent = ref('')
+const customZipName = ref('')
 
 // --- Helper Actions ---
 
@@ -106,11 +123,16 @@ const triggerFileInput = () => {
 }
 
 const addFilesToList = (files: File[]) => {
-  const mapped = files.map(file => ({
-    id: window.crypto.randomUUID(),
-    file,
-    name: file.name
-  }))
+  const mapped = files.map(file => {
+    const isImage = file.type.startsWith('image/')
+    const previewUrl = isImage ? URL.createObjectURL(file) : undefined
+    return {
+      id: window.crypto.randomUUID(),
+      file,
+      name: file.name,
+      previewUrl
+    }
+  })
   filesToUpload.value = [...filesToUpload.value, ...mapped]
   triggerDataGeneration()
 }
@@ -131,6 +153,10 @@ const onFilesDrop = (e: DragEvent) => {
 
 const removeFile = (index: number) => {
   if (uploading.value) return
+  const removed = filesToUpload.value[index]
+  if (removed.previewUrl) {
+    URL.revokeObjectURL(removed.previewUrl)
+  }
   filesToUpload.value.splice(index, 1)
   triggerDataGeneration()
 }
@@ -140,6 +166,136 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
   if (illegalChars.test(event.key)) {
     event.preventDefault()
   }
+}
+
+// Clipboard Paste Listener
+const handlePaste = (e: ClipboardEvent) => {
+  if (uploading.value) return
+  if (selectedType.value !== 'files') return
+
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  const files: File[] = []
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.kind === 'file') {
+      const file = item.getAsFile()
+      if (file) {
+        // Fallback name for clipboard images/files
+        const timestamp = new Date().getTime()
+        const defaultExt = file.type.split('/')[1] || 'png'
+        const defaultName = file.type.startsWith('image/')
+          ? `pasted-image-${timestamp}.${defaultExt}`
+          : `pasted-file-${timestamp}`
+        
+        const finalFile = new File(
+          [file],
+          file.name === 'image.png' || !file.name ? defaultName : file.name,
+          { type: file.type }
+        )
+        files.push(finalFile)
+      }
+    }
+  }
+
+  if (files.length > 0) {
+    addFilesToList(files)
+  }
+}
+
+const windowPasteHandler = (e: ClipboardEvent) => {
+  if (selectedType.value === 'files') {
+    handlePaste(e)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('paste', windowPasteHandler)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('paste', windowPasteHandler)
+  filesToUpload.value.forEach(item => {
+    if (item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl)
+    }
+  })
+})
+
+// File format metadata helper for badges/icons
+const getFileTypeMeta = (filename: string) => {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  switch (ext) {
+    case 'pdf':
+      return { label: 'PDF', color: 'bg-red-500/10 text-red-600 border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30', icon: FileText }
+    case 'doc':
+    case 'docx':
+      return { label: 'Word', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30', icon: FileText }
+    case 'xls':
+    case 'xlsx':
+    case 'csv':
+      return { label: 'Excel', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30', icon: FileSpreadsheet }
+    case 'ppt':
+    case 'pptx':
+      return { label: 'PPT', color: 'bg-orange-500/10 text-orange-600 border-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30', icon: FileText }
+    case 'zip':
+    case 'rar':
+    case '7z':
+    case 'tar':
+    case 'gz':
+      return { label: 'ZIP', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30', icon: FileArchive }
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+    case 'gif':
+    case 'webp':
+    case 'svg':
+      return { label: 'IMG', color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30', icon: FileImage }
+    case 'mp3':
+    case 'wav':
+    case 'ogg':
+    case 'm4a':
+      return { label: 'AUDIO', color: 'bg-violet-500/10 text-violet-600 border-violet-500/20 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/30', icon: FileAudio }
+    case 'mp4':
+    case 'mov':
+    case 'avi':
+    case 'mkv':
+      return { label: 'VIDEO', color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30', icon: FileVideo }
+    case 'txt':
+    case 'md':
+      return { label: 'TXT', color: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:bg-zinc-500/20 dark:text-zinc-400 dark:border-zinc-500/30', icon: FileText }
+    case 'js':
+    case 'ts':
+    case 'html':
+    case 'css':
+    case 'json':
+      return { label: 'CODE', color: 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30', icon: FileCode }
+    default:
+      return { label: ext.toUpperCase() || 'FILE', color: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:bg-zinc-500/20 dark:text-zinc-400 dark:border-zinc-500/30', icon: FileIcon }
+  }
+}
+
+// Text note creator
+const createTextNoteFile = (title: string, content: string) => {
+  let filename = title.trim()
+  if (!filename) filename = 'note'
+  if (!filename.toLowerCase().endsWith('.txt')) {
+    filename += '.txt'
+  }
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const file = new File([blob], filename, { type: 'text/plain' })
+  addFilesToList([file])
+}
+
+const handleAddNote = () => {
+  if (!noteTitle.value.trim()) {
+    return
+  }
+  createTextNoteFile(noteTitle.value, noteContent.value)
+  noteTitle.value = ''
+  noteContent.value = ''
+  showNoteEditor.value = false
 }
 
 // --- Data Generator ---
@@ -285,13 +441,28 @@ const handleFileUploadWorkflow = async () => {
       zip.file(finalName, item.file)
     }
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' })
-    const zipSize = zipBlob.size // Clean fix: Log actual ZIP size from code review
+    // Zip progress reporting
+    const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+      uploadProgress.value = `${t('บีบอัดไฟล์ ZIP...') || 'Zipping...'} ${Math.round(metadata.percent)}%`
+    })
+    const zipSize = zipBlob.size
 
     uploadProgress.value = t('กำลังอัปโหลดไปยัง Supabase...') || 'Uploading...'
 
     const fileId = window.crypto.randomUUID()
-    const fileName = `${fileId}.zip`
+    
+    // Process custom zip name
+    let cleanCustomName = customZipName.value.trim().replace(/[\\/:*?"<>|]/g, '')
+    if (cleanCustomName) {
+      if (!cleanCustomName.toLowerCase().endsWith('.zip')) {
+        cleanCustomName += '.zip'
+      }
+    } else {
+      cleanCustomName = 'archive.zip'
+    }
+
+    // Store in a subfolder `uuid/customName.zip` to preserve naming on public download links
+    const fileName = `${fileId}/${cleanCustomName}`
 
     const { error: uploadErrorDetails } = await supabase.storage
       .from('qr-files')
@@ -665,14 +836,14 @@ const categories = [
           </div>
         </div>
 
-        <div v-else class="space-y-3">
+        <div v-else class="space-y-3.5">
           <!-- Dropzone area -->
           <div 
             @click="triggerFileInput"
             @dragover.prevent
             @drop.prevent="onFilesDrop"
             :class="[
-              'flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200',
+              'flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center outline-none transition-all duration-200 focus-within:ring-2 focus-within:ring-blue-500/20',
               filesToUpload.length > 0 
                 ? 'border-blue-400 bg-blue-50/20 dark:border-blue-700 dark:bg-blue-950/10'
                 : 'border-zinc-200 hover:border-blue-400 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/30',
@@ -687,49 +858,158 @@ const categories = [
               @change="handleFileSelection"
               :disabled="uploading"
             />
-            <UploadCloud class="mb-2 size-10 text-zinc-400 dark:text-zinc-600" />
-            <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{{ t('เลือกไฟล์ข้อมูล หรือ ลากวางตรงนี้') }}</p>
+            <UploadCloud class="mb-2 size-9 animate-bounce text-zinc-400 duration-1000 dark:text-zinc-600" />
+            <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{{ t('เลือกไฟล์ข้อมูล, ลากวาง หรือ กด Ctrl+V เพื่อวาง') }}</p>
             <p class="mt-1 text-[10px] text-zinc-400 dark:text-zinc-500">{{ t('รองรับไฟล์หลากหลายขนาดรวมกันสูงสุด 10 MB') }}</p>
           </div>
 
-          <!-- Queue listing of chosen files -->
-          <div v-if="filesToUpload.length > 0" class="space-y-2">
-            <div class="flex items-center justify-between text-xs font-bold text-zinc-500">
-              <span>{{ t('ไฟล์ที่เลือก') }} ({{ filesToUpload.length }})</span>
-              <button 
-                type="button" 
-                @click="filesToUpload = []"
-                :disabled="uploading"
-                class="text-[11px] font-semibold text-red-500 outline-none hover:text-red-600 disabled:opacity-50"
-              >
-                {{ t('ล้างทั้งหมด') }}
+          <!-- Note Editor Form Toggle -->
+          <div v-if="showNoteEditor" class="space-y-2.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-950/20">
+            <div class="flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              <span class="flex items-center gap-1">
+                <Edit3 class="size-3.5 text-blue-600 dark:text-blue-400" />
+                <span>{{ t('เขียนโน้ตด่วนแนบไฟล์') || 'เขียนโน้ตด่วนแนบไฟล์' }}</span>
+              </span>
+              <button type="button" @click="showNoteEditor = false" class="text-zinc-450 hover:text-zinc-650 dark:hover:text-zinc-250">
+                <X class="size-3.5" />
               </button>
             </div>
+            <div class="space-y-2">
+              <input
+                type="text"
+                v-model="noteTitle"
+                placeholder="ชื่อหัวข้อโน้ต (เช่น ขั้นตอนแนะนำ.txt)"
+                class="w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+              />
+              <textarea
+                v-model="noteContent"
+                rows="3"
+                placeholder="พิมพ์เนื้อหาโน้ตตรงนี้..."
+                class="w-full rounded-lg border border-zinc-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+              ></textarea>
+            </div>
+            <div class="flex justify-end gap-2 text-xs font-semibold">
+              <button
+                type="button"
+                @click="showNoteEditor = false"
+                class="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+              >
+                {{ t('ยกเลิก') || 'ยกเลิก' }}
+              </button>
+              <button
+                type="button"
+                @click="handleAddNote"
+                :disabled="!noteTitle.trim()"
+                class="bg-blue-650 rounded-lg px-3 py-1.5 text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {{ t('เพิ่มเข้าคิว') || 'เพิ่มเข้าคิว' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Queue listing of chosen files -->
+          <div v-if="filesToUpload.length > 0" class="space-y-3">
+            <div class="flex items-center justify-between text-xs font-bold text-zinc-500">
+              <span class="flex items-center gap-1">
+                <span>{{ t('ไฟล์ที่เลือก') }} ({{ filesToUpload.length }})</span>
+                <span class="rounded bg-blue-100 px-1 py-0.5 font-mono text-[9px] font-bold text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">Ctrl+V ได้</span>
+              </span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  v-if="!showNoteEditor"
+                  @click="showNoteEditor = true"
+                  :disabled="uploading"
+                  class="flex items-center gap-0.5 text-[11px] font-semibold text-blue-600 outline-none hover:text-blue-700 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <Plus class="size-3" />
+                  <span>{{ t('เขียนโน้ตด่วน') || 'เขียนโน้ตด่วน' }}</span>
+                </button>
+                <span class="text-zinc-300 dark:text-zinc-700">|</span>
+                <button 
+                  type="button" 
+                  @click="filesToUpload = []"
+                  :disabled="uploading"
+                  class="text-[11px] font-semibold text-red-500 outline-none hover:text-red-600 disabled:opacity-50"
+                >
+                  {{ t('ล้างทั้งหมด') }}
+                </button>
+              </div>
+            </div>
             
-            <div class="max-h-[160px] space-y-1.5 overflow-y-auto pr-1">
+            <div class="max-h-[180px] space-y-1.5 overflow-y-auto pr-1">
               <div 
                 v-for="(item, idx) in filesToUpload" 
                 :key="item.id"
-                class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-2 text-xs dark:border-zinc-800/80 dark:bg-zinc-900/30"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50/60 p-2 text-xs dark:border-zinc-800/80 dark:bg-zinc-900/30"
               >
+                <div class="flex items-center gap-2 text-xs">
+                  <!-- File type preview/icon -->
+                  <div class="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950">
+                    <img 
+                      v-if="item.previewUrl" 
+                      :src="item.previewUrl" 
+                      class="size-full object-cover" 
+                      alt="preview"
+                    />
+                    <component 
+                      v-else 
+                      :is="getFileTypeMeta(item.name).icon" 
+                      class="size-4.5 text-zinc-500" 
+                    />
+                  </div>
+
+                  <!-- File name field -->
+                  <input 
+                    type="text" 
+                    v-model="item.name" 
+                    @keypress="onFilenameKeypress"
+                    :disabled="uploading"
+                    class="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 outline-none focus:border-blue-500 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    placeholder="ชื่อไฟล์"
+                  />
+
+                  <!-- Badges and details -->
+                  <div class="flex shrink-0 items-center gap-1.5">
+                    <span 
+                      class="rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                      :class="getFileTypeMeta(item.name).color"
+                    >
+                      {{ getFileTypeMeta(item.name).label }}
+                    </span>
+                    <span class="font-mono text-[9px] text-zinc-400">{{ (item.file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                    <button 
+                      type="button" 
+                      @click="removeFile(idx)"
+                      :disabled="uploading"
+                      class="rounded-lg p-1 text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/20"
+                    >
+                      <Trash2 class="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ZIP Configuration Option (Naming) -->
+            <div class="space-y-1.5 rounded-xl border border-zinc-200/60 bg-zinc-50/40 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/10">
+              <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {{ t('ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)') || 'ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)' }}
+              </label>
+              <div class="relative flex items-center">
                 <input 
                   type="text" 
-                  v-model="item.name" 
+                  v-model="customZipName"
                   @keypress="onFilenameKeypress"
                   :disabled="uploading"
-                  class="flex-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-800 outline-none focus:border-blue-500 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-                  placeholder="ชื่อไฟล์"
+                  placeholder="archive"
+                  class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 pr-10 text-xs font-semibold text-zinc-800 outline-none focus:border-blue-500 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
                 />
-                <span class="shrink-0 font-mono text-[10px] text-zinc-400">{{ (item.file.size / 1024 / 1024).toFixed(2) }} MB</span>
-                <button 
-                  type="button" 
-                  @click="removeFile(idx)"
-                  :disabled="uploading"
-                  class="rounded-lg p-1 text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/20"
-                >
-                  <Trash2 class="size-3.5" />
-                </button>
+                <span class="absolute right-3 font-mono text-[10px] text-zinc-400">.zip</span>
               </div>
+              <p class="text-zinc-450 text-[9px] leading-relaxed dark:text-zinc-500">
+                💡 {{ t('ช่วยให้ผู้ดาวน์โหลดได้รับชื่อไฟล์ ZIP ที่มีความหมาย แทนชื่อ UUID แบบสุ่ม') }}
+              </p>
             </div>
 
             <!-- Size details & Upload Button -->
@@ -752,6 +1032,20 @@ const categories = [
               <Sparkles v-if="!uploading" class="size-4" />
               <div v-else class="size-4 animate-spin rounded-full border-2 border-zinc-300 border-t-white"></div>
               <span>{{ uploading ? uploadProgress : (t('อัปโหลดไฟล์และแชร์เป็นลิงก์ ZIP') || 'Upload and zip link') }}</span>
+            </button>
+          </div>
+
+          <!-- Note Editor Form Toggle for Empty Queue -->
+          <div v-else class="flex select-none justify-center">
+            <button
+              type="button"
+              v-if="!showNoteEditor"
+              @click="showNoteEditor = true"
+              :disabled="uploading"
+              class="border-zinc-250 text-zinc-650 dark:border-zinc-750 dark:text-zinc-350 flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold hover:bg-zinc-50 disabled:opacity-50 dark:hover:bg-zinc-800/40"
+            >
+              <Plus class="size-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{{ t('เขียนโน้ตข้อความแนบ') || 'เขียนโน้ตข้อความแนบ' }}</span>
             </button>
           </div>
 

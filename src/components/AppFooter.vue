@@ -67,7 +67,7 @@ onMounted(() => {
         <a
           href="https://www.nsm.go.th"
           target="_blank"
-          class="ml-0.5 font-semibold text-zinc-800 no-underline transition-colors hover:text-blue-600 hover:underline dark:text-zinc-200 dark:hover:text-blue-400"
+          class="ml-0.5 font-semibold text-zinc-800 no-underline transition-colors hover:text-[var(--accent-blue)] hover:underline dark:text-zinc-200 dark:hover:text-[var(--accent-blue)]"
         >นักวิชาการคอมพิวเตอร์ เทศบาลนครนครสวรรค์</a>
       </span>
       
@@ -92,7 +92,7 @@ onMounted(() => {
       <Dialog>
         <DialogTrigger as-child>
           <button
-            class="relative text-xs font-semibold text-zinc-500 outline-none transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+            class="relative text-xs font-semibold text-zinc-500 outline-none transition-colors duration-300 hover:text-[var(--accent-blue)] dark:text-zinc-400 dark:hover:text-[var(--accent-blue)]"
             :aria-label="t('View changelog')"
             :disabled="isLoading"
             @click="markAsSeen"
@@ -132,7 +132,7 @@ onMounted(() => {
       <span class="dark:text-zinc-750 select-none text-zinc-300">•</span>
 
       <button
-        class="text-xs font-semibold text-zinc-500 outline-none transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+        class="text-xs font-semibold text-zinc-500 outline-none transition-colors duration-300 hover:text-[var(--accent-blue)] dark:text-zinc-400 dark:hover:text-[var(--accent-blue)]"
         :aria-label="t('Sponsor')"
         @click="isPromptPayOpen = true"
       >{{ t('Sponsor') }}</button>

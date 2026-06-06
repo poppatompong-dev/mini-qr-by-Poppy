@@ -1119,6 +1119,43 @@ async function generateBatchQRCodes(format: 'png' | 'svg' | 'jpg') {
 // #endregion
 
 const activeStyleTab = ref('dots')
+
+const activeTabLeft = computed(() => {
+  switch (activeStyleTab.value) {
+    case 'dots': return '2px'
+    case 'colors': return 'calc(25% + 1px)'
+    case 'logo': return 'calc(50% + 1px)'
+    case 'advanced': return 'calc(75% + 1px)'
+    default: return '2px'
+  }
+})
+
+const isQRAnimating = ref(false)
+let qrAnimTimeout1: ReturnType<typeof setTimeout>
+let qrAnimTimeout2: ReturnType<typeof setTimeout>
+
+watch(
+  qrCodeProps,
+  () => {
+    isQRAnimating.value = false
+    clearTimeout(qrAnimTimeout1)
+    clearTimeout(qrAnimTimeout2)
+    qrAnimTimeout1 = setTimeout(() => {
+      isQRAnimating.value = true
+      qrAnimTimeout2 = setTimeout(() => {
+        isQRAnimating.value = false
+      }, 400)
+    }, 10)
+  },
+  { deep: true }
+)
+
+const onFilenameKeypress = (event: KeyboardEvent) => {
+  const invalidChars = /[\\/:*?"<>|]/
+  if (invalidChars.test(event.key)) {
+    event.preventDefault()
+  }
+}
 </script>
 
 <template>
@@ -1140,7 +1177,7 @@ const activeStyleTab = ref('dots')
         <div class="flex flex-col items-center pb-2">
           <div class="mt-2.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
           <div :class="['w-full', showFrame ? 'py-1' : '-my-8']">
-            <div :class="['flex items-center justify-center', !showFrame && 'origin-center scale-[0.7]']">
+            <div :class="['flex items-center justify-center', !showFrame && 'origin-center scale-[0.7]', { 'qr-pulse-entrance': isQRAnimating }]">
               <FitScaleBox v-if="showFrame" :viewport-margin="32" :max-height="150">
                 <QRCodeFrame
                   :frame-text="frameText"
@@ -1205,14 +1242,24 @@ const activeStyleTab = ref('dots')
           <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">{{ t('ประเภทการป้อนข้อมูล') }}</h3>
           
           <!-- Mode Toggles -->
-          <div class="flex items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+          <div class="relative flex w-[170px] items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+            <!-- Sliding background pill -->
+            <div
+              class="duration-350 absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all dark:bg-zinc-700"
+              :style="{
+                left: exportMode === ExportMode.Single ? '2px' : 'calc(50% + 1px)',
+                width: 'calc(50% - 3px)',
+                transitionTimingFunction: 'var(--ease-out-expo)'
+              }"
+            ></div>
+
             <button
               type="button"
               :class="[
-                'rounded-lg px-3.5 py-1 text-[11px] font-bold outline-none transition-all duration-200',
+                'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
                 exportMode === ExportMode.Single
-                  ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                  ? 'text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               ]"
               @click="exportMode = ExportMode.Single"
             >
@@ -1221,10 +1268,10 @@ const activeStyleTab = ref('dots')
             <button
               type="button"
               :class="[
-                'rounded-lg px-3.5 py-1 text-[11px] font-bold outline-none transition-all duration-200',
+                'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
                 exportMode === ExportMode.Batch
-                  ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                  ? 'text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
               ]"
               @click="exportMode = ExportMode.Batch"
             >
@@ -1243,14 +1290,15 @@ const activeStyleTab = ref('dots')
           <template v-if="!inputFileForBatchEncoding">
             <BatchExportFieldsGuide />
             <div
-              class="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all duration-200 hover:border-blue-400 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/30"
+              class="upload-dropzone-pulse duration-350 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20"
+              :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
               @click="fileInput?.click()"
               @keyup.enter="fileInput?.click()"
               @keyup.space="fileInput?.click()"
               @dragover.prevent
               @drop.prevent="onBatchInputFileUpload"
             >
-              <UploadCloud class="mb-2 size-10 text-zinc-400 dark:text-zinc-600" />
+              <UploadCloud class="mb-2 size-10 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:text-zinc-600" />
               <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                 {{ $t('Upload a CSV file') }}
               </p>
@@ -1283,33 +1331,50 @@ const activeStyleTab = ref('dots')
               </button>
             </div>
 
-            <!-- CSV Row Preview -->
+            <!-- CSV Row Preview & Editor -->
             <div v-if="dataStringsFromCsv.length > 0" class="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20">
               <div class="dark:border-zinc-850 mb-3 flex items-center justify-between border-b border-zinc-200/60 pb-2">
-                <span class="text-xs font-semibold text-zinc-500">{{ $t('พรีวิวข้อมูลแถว') }}</span>
+                <span class="text-xs font-semibold text-zinc-500">{{ $t('Edit & Preview Row') }}</span>
                 <span class="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
                   {{ previewRowIndex + 1 }} / {{ dataStringsFromCsv.length }}
                 </span>
               </div>
-              <div class="space-y-2.5">
+              <div class="space-y-3">
+                <!-- Data Input (Text/URL) -->
                 <div>
-                  <span class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('Data') }}</span>
-                  <code class="dark:border-zinc-850 block truncate rounded-lg border border-zinc-100 bg-white px-3 py-2 font-mono text-xs text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300" :title="dataStringsFromCsv[previewRowIndex]">
-                    {{ dataStringsFromCsv[previewRowIndex] }}
-                  </code>
+                  <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('QR Code Data / Message') }}</span>
+                  <textarea
+                    v-model="dataStringsFromCsv[previewRowIndex]"
+                    @input="data = dataStringsFromCsv[previewRowIndex]"
+                    rows="2"
+                    class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                    placeholder="https://example.com"
+                  ></textarea>
                 </div>
-                <div v-if="frameTextsFromCsv[previewRowIndex]" class="grid grid-cols-2 gap-2">
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <!-- Frame Text Input -->
                   <div>
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('Frame text') }}</span>
-                    <code class="dark:border-zinc-850 block truncate rounded-lg border border-zinc-100 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                      {{ frameTextsFromCsv[previewRowIndex] }}
-                    </code>
+                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('Frame text') }}</span>
+                    <input
+                      type="text"
+                      v-model="frameTextsFromCsv[previewRowIndex]"
+                      @input="frameText = frameTextsFromCsv[previewRowIndex] || defaultFrameText"
+                      class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      :placeholder="defaultFrameText"
+                    />
                   </div>
-                  <div v-if="fileNamesFromCsv[previewRowIndex]">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('File name') }}</span>
-                    <code class="dark:border-zinc-850 block truncate rounded-lg border border-zinc-100 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                      {{ fileNamesFromCsv[previewRowIndex] }}
-                    </code>
+
+                  <!-- File Name Input -->
+                  <div>
+                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('File name') }}</span>
+                    <input
+                      type="text"
+                      v-model="fileNamesFromCsv[previewRowIndex]"
+                      @keypress="onFilenameKeypress"
+                      class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      placeholder="filename"
+                    />
                   </div>
                 </div>
               </div>
@@ -1365,21 +1430,32 @@ const activeStyleTab = ref('dots')
             </div>
 
             <!-- Batch Progress -->
-            <div v-if="currentExportedQrCodeIndex != null" class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-              <div class="flex items-center gap-3">
-                <div class="size-4 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-500"></div>
-                <div class="flex-1">
-                  <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{ $t('Creating QR codes... This may take a while.') }}</p>
-                  <p class="mt-0.5 text-[10px] text-zinc-400">
-                    {{
-                      $t('{index} / {count} QR codes have been created.', {
-                        index: currentExportedQrCodeIndex + 1,
-                        count: dataStringsFromCsv.length
-                      })
-                    }}
-                  </p>
+            <div v-if="currentExportedQrCodeIndex != null" class="p-4.5 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="size-2 animate-pulse rounded-full bg-[var(--accent-blue)]"></div>
+                  <p class="text-xs font-bold text-[var(--text-primary)]">{{ $t('Creating QR codes... This may take a while.') }}</p>
                 </div>
+                <span class="font-mono text-xs font-semibold text-zinc-500">
+                  {{ Math.round(((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100) }}%
+                </span>
               </div>
+              <!-- Progress track -->
+              <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <!-- Progress fill -->
+                <div
+                  class="h-full rounded-full bg-[var(--accent-blue)] transition-all duration-300 ease-out"
+                  :style="{ width: `${((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100}%` }"
+                ></div>
+              </div>
+              <p class="text-[10px] text-zinc-400">
+                {{
+                  $t('{index} / {count} QR codes have been created.', {
+                    index: currentExportedQrCodeIndex + 1,
+                    count: dataStringsFromCsv.length
+                  })
+                }}
+              </p>
             </div>
           </template>
         </div>
@@ -1388,15 +1464,25 @@ const activeStyleTab = ref('dots')
       <!-- Custom Styling Tool Card -->
       <div class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40">
         <!-- Tabs Header Bar -->
-        <div class="no-scrollbar mb-4 flex w-full gap-1 overflow-x-auto border-b border-zinc-200/60 pb-2 dark:border-zinc-800/60">
+        <div class="no-scrollbar relative mb-5 grid grid-cols-4 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60">
+          <!-- Sliding Tab Background Pill -->
+          <div
+            class="duration-350 absolute bottom-2.5 top-0.5 rounded-lg bg-zinc-100 transition-all dark:bg-zinc-800"
+            :style="{
+              left: activeTabLeft,
+              width: 'calc(25% - 2px)',
+              transitionTimingFunction: 'var(--ease-out-expo)'
+            }"
+          ></div>
+
           <button
             type="button"
             @click="activeStyleTab = 'dots'"
             :class="[
-              'shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'dots'
-                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
             ลวดลาย & สไตล์
@@ -1405,10 +1491,10 @@ const activeStyleTab = ref('dots')
             type="button"
             @click="activeStyleTab = 'colors'"
             :class="[
-              'shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'colors'
-                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
             สีสัน & กรอบ
@@ -1417,10 +1503,10 @@ const activeStyleTab = ref('dots')
             type="button"
             @click="activeStyleTab = 'logo'"
             :class="[
-              'shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'logo'
-                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
             โลโก้กลาง QR
@@ -1429,10 +1515,10 @@ const activeStyleTab = ref('dots')
             type="button"
             @click="activeStyleTab = 'advanced'"
             :class="[
-              'shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold outline-none transition-all duration-200',
+              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'advanced'
-                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                ? 'text-zinc-900 dark:text-zinc-100'
+                : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
             ตั้งค่าขั้นสูง
@@ -1475,10 +1561,10 @@ const activeStyleTab = ref('dots')
                 type="button"
                 @click="dotsOptionsType = type"
                 :class="[
-                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all',
+                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
                   dotsOptionsType === type 
-                    ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400' 
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                    : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
                 <div class="mb-1.5 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
@@ -1504,10 +1590,10 @@ const activeStyleTab = ref('dots')
                 type="button"
                 @click="cornersSquareOptionsType = type"
                 :class="[
-                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all',
+                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
                   cornersSquareOptionsType === type 
-                    ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400' 
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                    : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
                 <div class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
@@ -1531,10 +1617,10 @@ const activeStyleTab = ref('dots')
                 type="button"
                 @click="cornersDotOptionsType = type"
                 :class="[
-                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all',
+                  'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
                   cornersDotOptionsType === type 
-                    ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:bg-blue-950/20 dark:text-blue-400' 
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                    : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
                 <div class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
@@ -1844,7 +1930,7 @@ const activeStyleTab = ref('dots')
     <Teleport to="#main-content-container" v-if="mainContentContainer != null">
       <div id="main-content" class="flex w-full flex-col items-center">
         <!-- Live preview graphic -->
-        <div id="qr-code-container" class="mb-6 grid origin-center place-items-center">
+        <div id="qr-code-container" :class="['mb-6 grid origin-center place-items-center', { 'qr-pulse-entrance': isQRAnimating }]">
           <FitScaleBox v-if="showFrame" :max-width="FRAME_PREVIEW_MAX_WIDTH">
             <div id="element-to-export" class="w-fit">
               <QRCodeFrame
