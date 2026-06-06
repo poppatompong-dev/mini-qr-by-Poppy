@@ -439,7 +439,7 @@ const categories = [
 <template>
   <div class="w-full space-y-4">
     <!-- Categories Navigation Tab Bar -->
-    <div class="no-scrollbar flex w-full gap-1 overflow-x-auto border-b border-zinc-200/60 pb-1 dark:border-zinc-800/60">
+    <div class="flex w-full flex-wrap gap-1.5 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-800/60">
       <button
         v-for="cat in categories"
         :key="cat.id"
