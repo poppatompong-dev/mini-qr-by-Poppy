@@ -16,7 +16,9 @@ export default [
       'pnpm-lock.yaml',
       'scripts/**',
       '*.json',
-      'storybook-static/**'
+      'storybook-static/**',
+      '.agents/**',
+      'scratch/**'
     ]
   },
   js.configs.recommended,
@@ -48,10 +50,13 @@ export default [
         CustomEvent: 'readonly',
         DragEvent: 'readonly',
         MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
         InputEvent: 'readonly',
         ClipboardEvent: 'readonly',
         ProgressEvent: 'readonly',
         File: 'readonly',
+        confirm: 'readonly',
+        alert: 'readonly',
         FileReader: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',

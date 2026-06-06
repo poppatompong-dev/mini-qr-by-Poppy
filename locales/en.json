@@ -335,5 +335,18 @@
   "Your network name": "Your network name",
   "YYYY-MM-DDTHH:MM": "YYYY-MM-DDTHH:MM",
   "Zip Code": "Zip Code",
-  "Zipcode": "Zipcode"
+  "Zipcode": "Zipcode",
+  "Files": "Files",
+  "Zipping files...": "Zipping files...",
+  "Uploading to Supabase...": "Uploading to Supabase...",
+  "Upload complete!": "Upload complete!",
+  "Upload failed. Please try again.": "Upload failed. Please try again.",
+  "แนบไฟล์ (หลายไฟล์)": "Attach Files (Multiple)",
+  "คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่": "Click to select files or drag them here",
+  "ขนาดไฟล์รวมกันต้องไม่เกิน 10 MB": "Total file size must not exceed 10 MB",
+  "ไฟล์ที่เลือก": "Selected files",
+  "ขนาดรวม": "Total size",
+  "กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์": "Please select at least 1 file",
+  "สนับสนุนผู้พัฒนา": "Sponsor Developer",
+  "คุณสามารถสนับสนุนนักวิชาการคอมพิวเตอร์ เทศบาลนครนครสวรรค์ ได้ที่นี่": "You can support the Nakhon Sawan Municipality Computer Technical Officer here"
 }

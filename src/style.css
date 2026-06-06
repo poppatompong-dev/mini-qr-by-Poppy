@@ -7,13 +7,32 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
-  transition-duration: 300ms;
+  transition-duration: 200ms;
   transition-property: background-color, color;
   --scrollbar-width: 8px;
+
+  /* Color System (OKLCH Slate & Indigo) */
+  --bg-slate: oklch(98% 0.005 240);
+  --bg-card: rgba(255, 255, 255, 0.72);
+  --text-primary: oklch(25% 0.01 240);
+  --text-muted: oklch(60% 0.01 240);
+  --border-zinc: oklch(92% 0.005 240);
+  --accent-blue: oklch(56% 0.21 255);
+  --accent-hover: oklch(50% 0.21 255);
 
   @media screen and (prefers-reduced-motion: reduce), (update: slow) {
     transition-duration: 0s;
   }
+}
+
+.dark {
+  --bg-slate: oklch(14% 0.01 240);
+  --bg-card: rgba(18, 18, 20, 0.78);
+  --text-primary: oklch(96% 0.005 240);
+  --text-muted: oklch(70% 0.01 240);
+  --border-zinc: oklch(28% 0.01 240);
+  --accent-blue: oklch(62% 0.19 255);
+  --accent-hover: oklch(68% 0.19 255);
 }
 
 ::selection {
@@ -224,3 +243,129 @@ input[type='checkbox']:hover {
 .vertical-border {
   @apply h-8 w-1 bg-slate-300 dark:bg-slate-700;
 }
+
+/* Premium Background Grid & Subtle Abstract Gradient Pattern */
+@keyframes floatBg {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.05) translate(1%, -1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+body {
+  position: relative;
+  background-color: var(--bg-slate) !important;
+  color: var(--text-primary) !important;
+  background-image: radial-gradient(rgba(120, 119, 198, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: -5%;
+  background-image: url('./assets/abstract_bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15; /* Increased opacity for clear yet non-distracting visibility */
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  animation: floatBg 30s ease-in-out infinite;
+}
+
+.dark body {
+  background-color: var(--bg-slate) !important;
+  color: var(--text-primary) !important;
+  background-image: radial-gradient(rgba(244, 244, 245, 0.015) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark body::before {
+  opacity: 0.20; /* Blends beautifully with the dark slate tone */
+  filter: brightness(0.65) contrast(1.1) saturate(0.95);
+}
+
+/* Premium Glassmorphism Card Utility */
+.glass-card {
+  background: var(--bg-card) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-zinc) !important;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-card {
+  background: var(--bg-card) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-zinc) !important;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom premium hover and animation effects */
+.button, .secondary-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:hover:not(:disabled), .secondary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+
+.button:active:not(:disabled), .secondary-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Prevent layout shifts and add clean outline ring on input focus */
+.text-input:focus-visible {
+  outline: 2px solid var(--accent-blue) !important;
+  outline-offset: 1px;
+}
+
+/* Scanner viewport scanning laser */
+@keyframes scanline {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(270px); }
+  100% { transform: translateY(0); }
+}
+
+.glowing-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+  box-shadow: 0 0 10px var(--accent-blue), 0 0 4px var(--accent-blue);
+  animation: scanline 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glowing-scanline {
+    animation: none;
+    opacity: 0.4;
+    top: 50%;
+  }
+  .button, .secondary-button, .glass-card {
+    transition: none !important;
+    transform: none !important;
+  }
+  body::before {
+    animation: none !important;
+  }
+}
+
+

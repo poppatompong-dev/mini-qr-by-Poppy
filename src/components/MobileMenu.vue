@@ -167,8 +167,9 @@ onUnmounted(() => {
       </Dialog>
       <div class="flex flex-col gap-4">
         <!-- App title -->
-        <div class="flex items-center">
-          <h1 class="text-xl text-gray-700 dark:text-gray-100">MiniQR</h1>
+        <div class="flex flex-col items-start leading-none">
+          <h1 class="text-xl font-black text-gray-700 dark:text-gray-100">MiniQR</h1>
+          <span class="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5">by Poppy</span>
         </div>
 
         <!-- Dark mode toggle -->

@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { downloadBlob } from './download'
 
 describe('downloadBlob', () => {
-  let createObjectURLSpy: ReturnType<typeof vi.spyOn>
-  let revokeObjectURLSpy: ReturnType<typeof vi.spyOn>
-  let clickSpy: ReturnType<typeof vi.fn>
-  let appendChildSpy: ReturnType<typeof vi.spyOn>
-  let removeChildSpy: ReturnType<typeof vi.spyOn>
+  let createObjectURLSpy: any
+  let revokeObjectURLSpy: any
+  let clickSpy: any
+  let appendChildSpy: any
+  let removeChildSpy: any
   let createdAnchor: HTMLAnchorElement | null = null
 
   beforeEach(() => {
