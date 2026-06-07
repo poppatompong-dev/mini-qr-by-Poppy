@@ -498,7 +498,9 @@ const handleFileUploadWorkflow = async () => {
       currentUploadingFileIndex.value = uploadedCount
       currentUploadingFileName.value = prepared.finalName
       
-      const filePath = `${fileId}/${prepared.finalName}`
+      const originalExt = getFileExtension(prepared.finalName)
+      const storageFilename = `file_${uploadedCount}${originalExt}`
+      const filePath = `${fileId}/${storageFilename}`
       
       // Calculate progress percentage
       uploadProgressPercent.value = Math.round((uploadedCount / preparedFiles.length) * 100)

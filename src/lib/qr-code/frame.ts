@@ -1,7 +1,19 @@
 import { escapeAttr, escapeText, renderQrFragment, wrapAsSvg } from './render/svg'
 import type { FrameConfig, ResolvedQRCodeConfig } from './types'
 
-const DEFAULT_FRAME: Required<Omit<FrameConfig, 'text' | 'textPosition'>> = {
+const DEFAULT_FRAME: Required<
+  Omit<
+    FrameConfig,
+    | 'text'
+    | 'textPosition'
+    | 'textTop'
+    | 'textBottom'
+    | 'textColorTop'
+    | 'textColorBottom'
+    | 'fontSizeTop'
+    | 'fontSizeBottom'
+  >
+> = {
   textColor: '#000000',
   backgroundColor: '#ffffff',
   borderColor: '#000000',
@@ -32,82 +44,136 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
     return { svg: wrapAsSvg(fragment, size, size), width: size, height: size, matrixCount }
   }
 
-  const f: Required<FrameConfig> = { ...DEFAULT_FRAME, ...config.frame }
-  const isSide = f.textPosition === 'left' || f.textPosition === 'right'
-  const captionWidth = f.captionWidth > 0 ? f.captionWidth : size
-  // Wrap the caption the same way the preview (QRCodeFrame.vue) does: side
-  // captions render in a fixed-width column (captionWidth px, defaulting to
-  // the QR size), top/bottom captions wrap within the QR width. Without
-  // wrapping, a long caption line inflates the frame far beyond the
-  // preview's proportions.
-  const wrapWidth = isSide ? captionWidth : size
-  const lines = wrapLines(f.text, f.fontSize, wrapWidth)
-  const lineHeight = f.fontSize * 1.2
-  const textBlockHeight = lineHeight * lines.length
-  const widestLine = approxTextWidth(lines, f.fontSize)
-  const textBlockWidth = isSide ? wrapWidth : Math.max(widestLine, f.fontSize)
+  const f = { ...DEFAULT_FRAME, ...config.frame }
+  
+  // Determine if using new top/bottom text properties
+  const hasTop = typeof f.textTop === 'string' && f.textTop.trim() !== ''
+  const hasBottom = typeof f.textBottom === 'string' && f.textBottom.trim() !== ''
 
-  const padding = f.padding
-  /**
-   * Border sits OUTSIDE the QR + padding box — matches the CSS preview
-   * (QRCodeFrame.vue) where the border element wraps a content box that
-   * already includes the QR and padding. Without including borderWidth in
-   * the outer dimensions and offsetting the QR by borderWidth, a thick
-   * border with padding=0 would be painted in the same pixels the QR
-   * occupies, leaving only the side opposite the caption visible.
-   */
-  const bw = f.borderWidth
   let outerW: number
   let outerH: number
   let qrX: number
   let qrY: number
-  let textX: number
-  let textY: number
-  let textAnchor: 'start' | 'middle' | 'end'
+  let textNodes = ''
 
-  // Side captions taller than the QR grow the frame (the preview's flexbox
-  // does the same); the QR stays vertically centred. When the caption is
-  // shorter than the QR this reduces to padding + bw, matching top/bottom.
-  const sideOuterH = Math.max(size, textBlockHeight) + 2 * padding + 2 * bw
-  const sideQrY = (sideOuterH - size) / 2
+  const padding = f.padding
+  const bw = f.borderWidth
 
-  switch (f.textPosition) {
-    case 'top':
-      outerW = size + 2 * padding + 2 * bw
-      outerH = size + textBlockHeight + 3 * padding + 2 * bw
-      qrX = padding + bw
-      qrY = textBlockHeight + 2 * padding + bw
-      textX = outerW / 2
-      textY = padding + bw + f.fontSize
-      textAnchor = 'middle'
-      break
-    case 'bottom':
-      outerW = size + 2 * padding + 2 * bw
-      outerH = size + textBlockHeight + 3 * padding + 2 * bw
-      qrX = padding + bw
-      qrY = padding + bw
-      textX = outerW / 2
-      textY = size + 2 * padding + bw + f.fontSize
-      textAnchor = 'middle'
-      break
-    case 'left':
-      outerW = size + textBlockWidth + 3 * padding + 2 * bw
-      outerH = sideOuterH
-      qrX = textBlockWidth + 2 * padding + bw
-      qrY = sideQrY
-      textX = padding + bw + textBlockWidth / 2
-      textY = (outerH - textBlockHeight) / 2 + f.fontSize
-      textAnchor = 'middle'
-      break
-    case 'right':
-      outerW = size + textBlockWidth + 3 * padding + 2 * bw
-      outerH = sideOuterH
-      qrX = padding + bw
-      qrY = sideQrY
-      textX = size + 2 * padding + bw + textBlockWidth / 2
-      textY = (outerH - textBlockHeight) / 2 + f.fontSize
-      textAnchor = 'middle'
-      break
+  if (hasTop || hasBottom) {
+    const fontSizeTop = f.fontSizeTop ?? f.fontSize
+    const fontSizeBottom = f.fontSizeBottom ?? f.fontSize
+    const textColorTop = f.textColorTop ?? f.textColor
+    const textColorBottom = f.textColorBottom ?? f.textColor
+
+    const topLines = hasTop ? wrapLines(f.textTop!, fontSizeTop, size) : []
+    const bottomLines = hasBottom ? wrapLines(f.textBottom!, fontSizeBottom, size) : []
+
+    const lineHeightTop = fontSizeTop * 1.2
+    const lineHeightBottom = fontSizeBottom * 1.2
+
+    const textBlockTopHeight = hasTop ? lineHeightTop * topLines.length : 0
+    const textBlockBottomHeight = hasBottom ? lineHeightBottom * bottomLines.length : 0
+
+    outerW = size + 2 * padding + 2 * bw
+    outerH = size + 2 * padding + 2 * bw + (hasTop ? textBlockTopHeight + padding : 0) + (hasBottom ? textBlockBottomHeight + padding : 0)
+    qrX = padding + bw
+    qrY = padding + bw + (hasTop ? textBlockTopHeight + padding : 0)
+
+    const textXVal = outerW / 2
+    const textTopY = padding + bw + fontSizeTop
+    const textBottomY = qrY + size + padding + fontSizeBottom
+
+    if (hasTop) {
+      textNodes +=
+        `<text x="${textXVal}" y="${textTopY}" font-family="${escapeAttr(f.fontFamily)}" ` +
+        `font-size="${fontSizeTop}" fill="${escapeAttr(textColorTop)}" text-anchor="middle">` +
+        topLines
+          .map(
+            (line, i) =>
+              `<tspan x="${textXVal}" dy="${i === 0 ? 0 : lineHeightTop}">${escapeText(line)}</tspan>`
+          )
+          .join('') +
+        `</text>`
+    }
+    if (hasBottom) {
+      textNodes +=
+        `<text x="${textXVal}" y="${textBottomY}" font-family="${escapeAttr(f.fontFamily)}" ` +
+        `font-size="${fontSizeBottom}" fill="${escapeAttr(textColorBottom)}" text-anchor="middle">` +
+        bottomLines
+          .map(
+            (line, i) =>
+              `<tspan x="${textXVal}" dy="${i === 0 ? 0 : lineHeightBottom}">${escapeText(line)}</tspan>`
+          )
+          .join('') +
+        `</text>`
+    }
+  } else {
+    // Legacy single-text rendering path
+    const isSide = f.textPosition === 'left' || f.textPosition === 'right'
+    const captionWidth = f.captionWidth > 0 ? f.captionWidth : size
+    const wrapWidth = isSide ? captionWidth : size
+    const lines = wrapLines(f.text, f.fontSize, wrapWidth)
+    const lineHeight = f.fontSize * 1.2
+    const textBlockHeight = lineHeight * lines.length
+    const widestLine = approxTextWidth(lines, f.fontSize)
+    const textBlockWidth = isSide ? wrapWidth : Math.max(widestLine, f.fontSize)
+
+    const sideOuterH = Math.max(size, textBlockHeight) + 2 * padding + 2 * bw
+    const sideQrY = (sideOuterH - size) / 2
+
+    let textX: number
+    let textY: number
+    let textAnchor: 'start' | 'middle' | 'end'
+
+    switch (f.textPosition) {
+      case 'top':
+        outerW = size + 2 * padding + 2 * bw
+        outerH = size + textBlockHeight + 3 * padding + 2 * bw
+        qrX = padding + bw
+        qrY = textBlockHeight + 2 * padding + bw
+        textX = outerW / 2
+        textY = padding + bw + f.fontSize
+        textAnchor = 'middle'
+        break
+      case 'bottom':
+        outerW = size + 2 * padding + 2 * bw
+        outerH = size + textBlockHeight + 3 * padding + 2 * bw
+        qrX = padding + bw
+        qrY = padding + bw
+        textX = outerW / 2
+        textY = size + 2 * padding + bw + f.fontSize
+        textAnchor = 'middle'
+        break
+      case 'left':
+        outerW = size + textBlockWidth + 3 * padding + 2 * bw
+        outerH = sideOuterH
+        qrX = textBlockWidth + 2 * padding + bw
+        qrY = sideQrY
+        textX = padding + bw + textBlockWidth / 2
+        textY = (outerH - textBlockHeight) / 2 + f.fontSize
+        textAnchor = 'middle'
+        break
+      case 'right':
+        outerW = size + textBlockWidth + 3 * padding + 2 * bw
+        outerH = sideOuterH
+        qrX = padding + bw
+        qrY = sideQrY
+        textX = size + 2 * padding + bw + textBlockWidth / 2
+        textY = (outerH - textBlockHeight) / 2 + f.fontSize
+        textAnchor = 'middle'
+        break
+    }
+
+    textNodes =
+      `<text x="${textX}" y="${textY}" font-family="${escapeAttr(f.fontFamily)}" ` +
+      `font-size="${f.fontSize}" fill="${escapeAttr(f.textColor)}" text-anchor="${textAnchor}">` +
+      lines
+        .map(
+          (line, i) =>
+            `<tspan x="${textX}" dy="${i === 0 ? 0 : lineHeight}">${escapeText(line)}</tspan>`
+        )
+        .join('') +
+      `</text>`
   }
 
   const halfBorder = f.borderWidth / 2
@@ -135,24 +201,8 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
       `fill="none" stroke="${escapeAttr(f.borderColor)}" stroke-width="${f.borderWidth}"/>`
   }
 
-  const textNode =
-    `<text x="${textX}" y="${textY}" font-family="${escapeAttr(f.fontFamily)}" ` +
-    `font-size="${f.fontSize}" fill="${escapeAttr(f.textColor)}" text-anchor="${textAnchor}">` +
-    lines
-      .map(
-        (line, i) =>
-          `<tspan x="${textX}" dy="${i === 0 ? 0 : lineHeight}">${escapeText(line)}</tspan>`
-      )
-      .join('') +
-    `</text>`
-
   // Lift the <image> (centre logo) out of the QR group with its x/y rewritten
-  // to absolute viewBox coordinates. Reason: the raster export path needs to
-  // strip the <image> and draw it separately on canvas to bypass SVG-img
-  // sandboxing of external resources; that's much simpler when the image's
-  // coordinates are already absolute and don't require composing a parent
-  // transform. Visually identical to the original — same final position,
-  // same z-order (still drawn after the QR fragment).
+  // to absolute viewBox coordinates.
   const { fragment: qrInnerFragment, image: liftedImage } = liftImage(fragment, qrX, qrY)
   const qrGroup = `<g transform="translate(${qrX}, ${qrY})">${qrInnerFragment}</g>`
 
@@ -163,7 +213,7 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
     backgroundImageNodes +
     qrGroup +
     liftedImage +
-    textNode +
+    textNodes +
     `</svg>`
 
   return { svg, width: outerW, height: outerH, matrixCount }

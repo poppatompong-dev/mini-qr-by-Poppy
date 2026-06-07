@@ -140,12 +140,35 @@ const fetchShareDetails = async () => {
   }
 }
 
+const getFileExtension = (filename: string): string => {
+  const parts = filename.split('.')
+  return parts.length > 1 ? `.${parts.pop()}` : ''
+}
+
 // Direct Download a single file
 const handleDownloadSingle = async (filename: string) => {
   try {
-    const { data, error: dlError } = await supabase.storage
+    const index = shareData.value?.files_list.indexOf(filename) ?? -1
+    if (index === -1) throw new Error('File not found in share metadata')
+
+    const ext = getFileExtension(filename)
+    const storageFilename = `file_${index}${ext}`
+
+    let data, dlError
+    const res = await supabase.storage
       .from('qr-files')
-      .download(`${props.shareId}/${filename}`)
+      .download(`${props.shareId}/${storageFilename}`)
+    data = res.data
+    dlError = res.error
+
+    if (dlError) {
+      console.log('Indexed download failed, trying original name:', filename)
+      const resFallback = await supabase.storage
+        .from('qr-files')
+        .download(`${props.shareId}/${filename}`)
+      data = resFallback.data
+      dlError = resFallback.error
+    }
 
     if (dlError) throw dlError
     if (data) {
@@ -170,10 +193,25 @@ const handleDownloadAllZip = async () => {
     
     let index = 0
     for (const filename of files) {
-      const { data, error: dlError } = await supabase.storage
-        .from('qr-files')
-        .download(`${props.shareId}/${filename}`)
+      const ext = getFileExtension(filename)
+      const storageFilename = `file_${index}${ext}`
       
+      let data, dlError
+      const res = await supabase.storage
+        .from('qr-files')
+        .download(`${props.shareId}/${storageFilename}`)
+      data = res.data
+      dlError = res.error
+
+      if (dlError) {
+        console.log('Indexed zip item download failed, trying original name:', filename)
+        const resFallback = await supabase.storage
+          .from('qr-files')
+          .download(`${props.shareId}/${filename}`)
+        data = resFallback.data
+        dlError = resFallback.error
+      }
+
       if (dlError) throw dlError
       if (data) {
         zip.file(filename, data)

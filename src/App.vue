@@ -388,54 +388,6 @@ const isModeToggleDisabled = computed(() => {
             </div>
           </div>
         </section>
-
-        <!-- 4. Developer / Creator Portfolio Card -->
-        <section 
-          v-if="appMode === AppMode.Create || appMode === AppMode.Scan"
-          class="mt-14 border-t border-[var(--border-zinc)] pt-12 text-center"
-        >
-          <h3 class="text-xs font-bold uppercase tracking-widest text-[var(--accent-gold)]">
-            {{ t('ผู้รับผิดชอบระบบงานดิจิทัล') || 'ผู้รับผิดชอบระบบงานดิจิทัล' }}
-          </h3>
-          <h4 class="mt-2 text-2xl font-black text-[var(--text-primary)]">
-            {{ t('บุคลากรผู้จัดทำและพัฒนาโครงการ') || 'บุคลากรผู้จัดทำและพัฒนาโครงการ' }}
-          </h4>
-
-          <!-- Developer Profile Card -->
-          <div class="relative mx-auto mt-8 max-w-2xl overflow-hidden rounded-2xl border border-[var(--border-zinc)] bg-white/70 p-6 text-left shadow-md backdrop-blur-md dark:bg-zinc-900/40">
-            <!-- Decorative Gold Line Border Top -->
-            <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--primary)] via-[var(--accent-gold)] to-[var(--primary)]"></div>
-            
-            <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <!-- Profile Icon/Avatar representation -->
-              <div class="border-[var(--accent-gold)]/40 flex size-20 shrink-0 items-center justify-center rounded-2xl border bg-[var(--primary)] text-white shadow-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-10 text-[var(--accent-gold)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
-
-              <!-- Profile Details -->
-              <div class="flex-1">
-                <div class="flex flex-wrap items-baseline gap-x-2.5">
-                  <h4 class="text-lg font-bold text-[var(--text-primary)]">นายปฐมพงษ์ หล้ามหศักดิ์</h4>
-                  <span class="text-xs font-medium text-[var(--accent-gold)]">{{ t('Computer Technical Officer') || 'Computer Technical Officer' }}</span>
-                </div>
-                <p class="dark:text-zinc-550 text-xs font-semibold text-zinc-400">ฝ่ายเทคโนโลยีสารสนเทศ เทศบาลนครนครสวรรค์</p>
-                
-                <p class="text-zinc-550 mt-3 text-xs leading-relaxed dark:text-zinc-400">
-                  {{ t('รับหน้าที่ออกแบบโครงสร้าง ความมั่นคงปลอดภัย และการพัฒนาบริการดิจิทัลภาครัฐ (e-Services) เพื่ออำนวยความสะดวกในระบบงานเทศบาลและการประชาสัมพันธ์แก่ประชาชนทั่วไป มุ่งเน้นการปฏิรูปเทคโนโลยีในองค์กรส่วนท้องถิ่นอย่างยั่งยืน') || 'รับหน้าที่ออกแบบโครงสร้าง ความมั่นคงปลอดภัย และการพัฒนาบริการดิจิทัลภาครัฐ (e-Services) เพื่ออำนวยความสะดวกในระบบงานเทศบาลและการประชาสัมพันธ์แก่ประชาชนทั่วไป มุ่งเน้นการปฏิรูปเทคโนโลยีในองค์กรส่วนท้องถิ่นอย่างยั่งยืน' }}
-                </p>
-
-                <!-- Professional Tags -->
-                <div class="mt-4 flex flex-wrap gap-1.5">
-                  <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">e-Government</span>
-                  <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">Cybersecurity</span>
-                  <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">System Engineering</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
     <AppFooter />

@@ -37,6 +37,12 @@ export interface LegacyFrameInput {
   style: LegacyFrameStyle
   /** Side captions only: caption column width in px (0/absent = QR size). */
   captionWidth?: number
+  textTop?: string
+  textBottom?: string
+  textColorTop?: string
+  textColorBottom?: string
+  fontSizeTop?: number
+  fontSizeBottom?: number
 }
 
 export interface SvgExportInput {
@@ -136,7 +142,13 @@ function toFrameConfig(input: LegacyFrameInput): FrameConfig {
   // break downstream escapeAttr calls.
   const out: FrameConfig = {
     text: input.text,
-    textPosition: input.position
+    textPosition: input.position,
+    textTop: input.textTop,
+    textBottom: input.textBottom,
+    textColorTop: input.textColorTop,
+    textColorBottom: input.textColorBottom,
+    fontSizeTop: input.fontSizeTop,
+    fontSizeBottom: input.fontSizeBottom
   }
   if (s.textColor) out.textColor = s.textColor
   if (s.backgroundColor) out.backgroundColor = s.backgroundColor

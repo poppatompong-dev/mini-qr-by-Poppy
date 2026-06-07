@@ -68,7 +68,7 @@ onMounted(() => {
           href="https://www.nsm.go.th"
           target="_blank"
           class="font-bold text-[var(--text-primary)] no-underline transition-colors hover:text-[var(--accent-gold)] dark:hover:text-[var(--accent-gold)]"
-        >ฝ่ายเทคโนโลยีสารสนเทศ เทศบาลนครนครสวรรค์</a>
+        >นักวิชาการคอมพิวเตอร์ กองยุทธศาสตร์และงบประมาณ เทศบาลนครนครสวรรค์</a>
       </span>
       
       <span class="select-none font-bold text-[var(--accent-gold)]">•</span>

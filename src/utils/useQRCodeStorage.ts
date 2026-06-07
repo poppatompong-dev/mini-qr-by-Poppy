@@ -8,6 +8,12 @@ export interface QRCodeFrameConfig {
   style: FrameStyle
   /** Side captions only: caption column width in px (default 200). */
   captionWidth?: number
+  textTop?: string
+  textBottom?: string
+  textColorTop?: string
+  textColorBottom?: string
+  fontSizeTop?: number
+  fontSizeBottom?: number
 }
 
 export interface QRCodeConfig {

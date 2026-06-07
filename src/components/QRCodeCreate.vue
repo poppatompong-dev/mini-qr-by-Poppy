@@ -316,6 +316,12 @@ const recommendedErrorCorrectionLevel = computed<ErrorCorrectionLevel | null>(()
 const defaultFrameText = computed(() => t('Scan for more info'))
 const frameText = ref<string>('')
 const frameTextPosition = ref<'top' | 'bottom' | 'left' | 'right'>('bottom')
+const frameTextTop = ref<string>('')
+const frameTextBottom = ref<string>('')
+const frameTextTopSize = ref<number>(18)
+const frameTextBottomSize = ref<number>(18)
+const frameTextTopColor = ref<string>('')
+const frameTextBottomColor = ref<string>('')
 // Side captions only: the user sets the overall "Frame width"; the caption
 // column derives from it via the simplified relation
 //   caption width = frame width − QR width (200 preview px).
@@ -483,8 +489,24 @@ function applyFramePreset(preset: FramePreset) {
     frameStyle.value = toFrameStyle(preset.style)
     loadFrameFont(preset.style.fontFamily)
   }
+  const anyPreset = preset as any
+  frameTextTop.value = anyPreset.textTop || ''
+  frameTextBottom.value = anyPreset.textBottom || ''
+  frameTextTopSize.value = anyPreset.fontSizeTop ?? 18
+  frameTextBottomSize.value = anyPreset.fontSizeBottom ?? 18
+  frameTextTopColor.value = anyPreset.textColorTop || ''
+  frameTextBottomColor.value = anyPreset.textColorBottom || ''
+
   if (preset.text) frameText.value = preset.text
   if (preset.position) frameTextPosition.value = preset.position
+
+  if (!frameTextTop.value && !frameTextBottom.value && preset.text) {
+    if (preset.position === 'top') {
+      frameTextTop.value = preset.text
+    } else {
+      frameTextBottom.value = preset.text
+    }
+  }
   showFrame.value = true
 }
 
@@ -510,7 +532,13 @@ const frameSettings = computed(() => ({
   text: frameText.value,
   position: frameTextPosition.value,
   style: frameStyle.value,
-  captionWidth: frameCaptionWidth.value
+  captionWidth: frameCaptionWidth.value,
+  textTop: frameTextTop.value,
+  textBottom: frameTextBottom.value,
+  textColorTop: frameTextTopColor.value,
+  textColorBottom: frameTextBottomColor.value,
+  fontSizeTop: frameTextTopSize.value,
+  fontSizeBottom: frameTextBottomSize.value
 }))
 
 const FONT_CATEGORY_LABELS: Record<FontCategory, string> = {
@@ -701,7 +729,13 @@ function buildSvgExportInput() {
           text: frameText.value,
           position: frameTextPosition.value,
           style: frameStyle.value,
-          captionWidth: frameCaptionWidth.value
+          captionWidth: frameCaptionWidth.value,
+          textTop: frameTextTop.value,
+          textBottom: frameTextBottom.value,
+          textColorTop: frameTextTopColor.value || undefined,
+          textColorBottom: frameTextBottomColor.value || undefined,
+          fontSizeTop: frameTextTopSize.value,
+          fontSizeBottom: frameTextBottomSize.value
         }
       : null,
     outerBackground: styleBackground.value,
@@ -764,6 +798,21 @@ function applyQRConfig(config: QRCodeConfig, key?: string, options?: { restoreDa
     showFrame.value = true
     frameText.value = config.frame.text || defaultFrameText.value
     frameTextPosition.value = config.frame.position || 'bottom'
+    frameTextTop.value = config.frame.textTop || ''
+    frameTextBottom.value = config.frame.textBottom || ''
+    frameTextTopSize.value = config.frame.fontSizeTop ?? 18
+    frameTextBottomSize.value = config.frame.fontSizeBottom ?? 18
+    frameTextTopColor.value = config.frame.textColorTop || ''
+    frameTextBottomColor.value = config.frame.textColorBottom || ''
+
+    if (!frameTextTop.value && !frameTextBottom.value && config.frame.text) {
+      if (config.frame.position === 'top') {
+        frameTextTop.value = config.frame.text
+      } else {
+        frameTextBottom.value = config.frame.text
+      }
+    }
+
     // Stored configs keep the derived caption width; restore the user-facing
     // frame width from it (clamped to the valid range).
     frameWidth.value = Math.min(
@@ -784,11 +833,17 @@ function applyQRConfig(config: QRCodeConfig, key?: string, options?: { restoreDa
       }
     }
 
-    const framePreset: FramePreset = {
+    const framePreset: any = {
       name: key || LAST_LOADED_LOCALLY_PRESET_KEY,
       style: config.frame.style,
       text: config.frame.text,
-      position: config.frame.position
+      position: config.frame.position,
+      textTop: config.frame.textTop,
+      textBottom: config.frame.textBottom,
+      textColorTop: config.frame.textColorTop,
+      textColorBottom: config.frame.textColorBottom,
+      fontSizeTop: config.frame.fontSizeTop,
+      fontSizeBottom: config.frame.fontSizeBottom
     }
 
     if (key) {
@@ -1396,6 +1451,12 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   :text-position="frameTextPosition"
                   :frame-style="frameStyle"
                   :caption-width="frameCaptionWidth"
+                  :frame-text-top="frameTextTop"
+                  :frame-text-bottom="frameTextBottom"
+                  :text-color-top="frameTextTopColor"
+                  :text-color-bottom="frameTextBottomColor"
+                  :font-size-top="frameTextTopSize"
+                  :font-size-bottom="frameTextBottomSize"
                 >
                   <template #qr-code>
                     <div id="qr-code-container" class="grid place-items-center">
@@ -2127,19 +2188,33 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 </div>
                 <div>
                   <label
-                    for="frame-text"
+                    for="frame-text-top"
                     class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
-                    >{{ t('Text') }}</label
+                    >ข้อความด้านบน (Top Text)</label
                   >
                   <input
-                    id="frame-text"
+                    id="frame-text-top"
                     type="text"
                     class="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3.5 py-2 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
-                    v-model="frameText"
-                    :placeholder="defaultFrameText"
+                    v-model="frameTextTop"
+                    placeholder="พิมพ์ข้อความด้านบนคิวอาร์..."
                   />
                 </div>
-                <div class="sm:col-span-2">
+                <div>
+                  <label
+                    for="frame-text-bottom"
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >ข้อความด้านล่าง (Bottom Text)</label
+                  >
+                  <input
+                    id="frame-text-bottom"
+                    type="text"
+                    class="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3.5 py-2 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
+                    v-model="frameTextBottom"
+                    placeholder="พิมพ์ข้อความด้านล่างคิวอาร์..."
+                  />
+                </div>
+                <div>
                   <label
                     class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
                     >{{ t('Font family') }}</label
@@ -2168,9 +2243,95 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     </option>
                   </select>
                 </div>
+                <div v-if="!frameTextTop && !frameTextBottom">
+                  <label
+                    for="frame-text"
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Text') }} (โหมดเดี่ยว)</label
+                  >
+                  <input
+                    id="frame-text"
+                    type="text"
+                    class="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3.5 py-2 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
+                    v-model="frameText"
+                    :placeholder="defaultFrameText"
+                  />
+                </div>
               </div>
 
-              <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <!-- Top/Bottom Custom Text Styles (Font size and color) -->
+              <div v-if="frameTextTop || frameTextBottom" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <!-- Top Text customization -->
+                <div v-if="frameTextTop" class="rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10 space-y-2.5">
+                  <span class="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider">ปรับรูปภาพข้อความด้านบน (Top Text)</span>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="mb-1 block text-[10px] text-zinc-400">ขนาดตัวอักษร: {{ frameTextTopSize }}px</label>
+                      <input
+                        type="range"
+                        min="10"
+                        max="40"
+                        v-model.number="frameTextTopSize"
+                        class="w-full cursor-pointer accent-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-[10px] text-zinc-400">สีของข้อความ</label>
+                      <div class="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          v-model="frameTextTopColor"
+                          class="size-7 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800"
+                        />
+                        <button
+                          type="button"
+                          @click="frameTextTopColor = ''"
+                          class="text-[9px] text-zinc-500 hover:text-zinc-700"
+                        >
+                          สีเริ่มต้น
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bottom Text customization -->
+                <div v-if="frameTextBottom" class="rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10 space-y-2.5">
+                  <span class="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider">ปรับรูปภาพข้อความด้านล่าง (Bottom Text)</span>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="mb-1 block text-[10px] text-zinc-400">ขนาดตัวอักษร: {{ frameTextBottomSize }}px</label>
+                      <input
+                        type="range"
+                        min="10"
+                        max="40"
+                        v-model.number="frameTextBottomSize"
+                        class="w-full cursor-pointer accent-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-[10px] text-zinc-400">สีของข้อความ</label>
+                      <div class="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          v-model="frameTextBottomColor"
+                          class="size-7 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800"
+                        />
+                        <button
+                          type="button"
+                          @click="frameTextBottomColor = ''"
+                          class="text-[9px] text-zinc-500 hover:text-zinc-700"
+                        >
+                          สีเริ่มต้น
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legacy Position Selector (Visible only if Top/Bottom texts are empty) -->
+              <div v-if="!frameTextTop && !frameTextBottom" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 <fieldset class="space-y-1">
                   <legend
                     class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
@@ -2549,6 +2710,12 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 :text-position="frameTextPosition"
                 :frame-style="frameStyle"
                 :caption-width="frameCaptionWidth"
+                :frame-text-top="frameTextTop"
+                :frame-text-bottom="frameTextBottom"
+                :text-color-top="frameTextTopColor"
+                :text-color-bottom="frameTextBottomColor"
+                :font-size-top="frameTextTopSize"
+                :font-size-bottom="frameTextBottomSize"
               >
                 <template #qr-code>
                   <div id="qr-code-container" class="grid place-items-center">

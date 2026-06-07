@@ -241,12 +241,12 @@ export function isValidFrameStyle(value: unknown): value is FrameStyle {
   )
 }
 
-export function isValidFrameConfig(value: unknown): value is FramePreset {
+export function isValidFrameConfig(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
-  const f = value as Record<string, unknown>
+  const f = value as Record<string, any>
   return (
-    typeof f.text === 'string' &&
-    VALID_FRAME_POSITIONS.includes(f.position as (typeof VALID_FRAME_POSITIONS)[number]) &&
+    (typeof f.text === 'string' || f.text === undefined) &&
+    (f.position === undefined || VALID_FRAME_POSITIONS.includes(f.position)) &&
     isValidFrameStyle(f.style)
   )
 }

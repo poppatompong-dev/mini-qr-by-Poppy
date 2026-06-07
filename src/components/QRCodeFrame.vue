@@ -17,12 +17,24 @@ interface Props {
   frameStyle?: FrameStyle
   /** Side captions only: caption column width in px. */
   captionWidth?: number
+  frameTextTop?: string
+  frameTextBottom?: string
+  textColorTop?: string
+  textColorBottom?: string
+  fontSizeTop?: number
+  fontSizeBottom?: number
 }
 
 withDefaults(defineProps<Props>(), {
   textPosition: 'bottom',
   frameStyle: () => ({}),
-  captionWidth: 200
+  captionWidth: 200,
+  frameTextTop: '',
+  frameTextBottom: '',
+  textColorTop: '',
+  textColorBottom: '',
+  fontSizeTop: 18,
+  fontSizeBottom: 18
 })
 
 const PREVIEW_QRCODE_DIM_UNIT = 200
@@ -32,10 +44,12 @@ const PREVIEW_QRCODE_DIM_UNIT = 200
   <div
     :class="[
       'w-fit',
-      textPosition === 'left' || textPosition === 'right' ? 'flex-row' : 'flex-col',
+      (frameTextTop || frameTextBottom)
+        ? 'flex-col'
+        : (textPosition === 'left' || textPosition === 'right' ? 'flex-row' : 'flex-col'),
       {
-        'flex-row-reverse': textPosition === 'left',
-        'flex-col-reverse': textPosition === 'top'
+        'flex-row-reverse': !(frameTextTop || frameTextBottom) && textPosition === 'left',
+        'flex-col-reverse': !(frameTextTop || frameTextBottom) && textPosition === 'top'
       }
     ]"
     :style="{
@@ -56,21 +70,53 @@ const PREVIEW_QRCODE_DIM_UNIT = 200
       justifyContent: 'center'
     }"
   >
-    <slot name="qr-code"></slot>
+    <!-- Top Text if active -->
     <p
+      v-if="(frameTextTop || frameTextBottom) ? frameTextTop : (textPosition === 'top' && frameText)"
+      :style="{
+        color: (frameTextTop || frameTextBottom) ? (textColorTop || frameStyle.textColor) : frameStyle.textColor,
+        fontFamily: frameStyle.fontFamily || undefined,
+        fontSize: (frameTextTop || frameTextBottom) ? `${fontSizeTop}px` : undefined,
+        margin: 0,
+        textAlign: 'center',
+        maxWidth: `${PREVIEW_QRCODE_DIM_UNIT}px`,
+        whiteSpace: 'pre-line'
+      }"
+    >
+      {{ (frameTextTop || frameTextBottom) ? frameTextTop : frameText }}
+    </p>
+
+    <!-- Side Text if active (left/right only) -->
+    <p
+      v-if="!(frameTextTop || frameTextBottom) && (textPosition === 'left' || textPosition === 'right')"
       :style="{
         color: frameStyle.textColor,
         fontFamily: frameStyle.fontFamily || undefined,
         margin: 0,
         textAlign: 'center',
-        [textPosition === 'left' || textPosition === 'right' ? 'width' : 'maxWidth']:
-          textPosition === 'left' || textPosition === 'right'
-            ? `${captionWidth}px`
-            : `${PREVIEW_QRCODE_DIM_UNIT}px`,
+        width: `${captionWidth}px`,
         whiteSpace: 'pre-line'
       }"
     >
       {{ frameText }}
+    </p>
+
+    <slot name="qr-code"></slot>
+
+    <!-- Bottom Text if active -->
+    <p
+      v-if="(frameTextTop || frameTextBottom) ? frameTextBottom : (textPosition === 'bottom' && frameText)"
+      :style="{
+        color: (frameTextTop || frameTextBottom) ? (textColorBottom || frameStyle.textColor) : frameStyle.textColor,
+        fontFamily: frameStyle.fontFamily || undefined,
+        fontSize: (frameTextTop || frameTextBottom) ? `${fontSizeBottom}px` : undefined,
+        margin: 0,
+        textAlign: 'center',
+        maxWidth: `${PREVIEW_QRCODE_DIM_UNIT}px`,
+        whiteSpace: 'pre-line'
+      }"
+    >
+      {{ (frameTextTop || frameTextBottom) ? frameTextBottom : frameText }}
     </p>
   </div>
 </template>

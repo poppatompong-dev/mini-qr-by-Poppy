@@ -53,6 +53,12 @@ export interface FrameConfig {
    * backgroundColor, covering the whole frame, clipped to the border radius.
    */
   backgroundImage?: string
+  textTop?: string
+  textBottom?: string
+  textColorTop?: string
+  textColorBottom?: string
+  fontSizeTop?: number
+  fontSizeBottom?: number
 }
 
 export interface QRCodeConfig {
