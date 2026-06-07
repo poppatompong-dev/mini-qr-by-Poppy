@@ -106,7 +106,7 @@ export interface ResolvedQRCodeConfig {
 
 export const DEFAULT_CONFIG: Omit<ResolvedQRCodeConfig, 'data'> = {
   size: 200,
-  margin: 0,
+  margin: 12,
   errorCorrectionLevel: 'Q',
   dots: { shape: 'square', color: '#000000' },
   cornerSquares: { shape: 'square', color: '#000000' },

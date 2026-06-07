@@ -184,10 +184,23 @@ export const borderlessFramePreset: FramePreset = {
   }
 }
 
+export const textOnlyFramePreset: FramePreset = {
+  name: 'Text Only (No Border/Bg)',
+  style: {
+    textColor: '#000000',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: '0px',
+    borderRadius: '0px',
+    padding: '12px'
+  }
+}
+
 export const builtInFramePresets: FramePreset[] = [
   plainFramePreset,
   darkFramePreset,
-  borderlessFramePreset
+  borderlessFramePreset,
+  textOnlyFramePreset
 ]
 
 function parseFramePresetsFromEnv(envVal?: string): FramePreset[] | undefined {

@@ -60,10 +60,10 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
   const bw = f.borderWidth
 
   if (hasTop || hasBottom) {
-    const fontSizeTop = f.fontSizeTop ?? f.fontSize
-    const fontSizeBottom = f.fontSizeBottom ?? f.fontSize
-    const textColorTop = f.textColorTop ?? f.textColor
-    const textColorBottom = f.textColorBottom ?? f.textColor
+    const fontSizeTop = f.fontSizeTop || f.fontSize
+    const fontSizeBottom = f.fontSizeBottom || f.fontSize
+    const textColorTop = f.textColorTop || f.textColor
+    const textColorBottom = f.textColorBottom || f.textColor
 
     const topLines = hasTop ? wrapLines(f.textTop!, fontSizeTop, size) : []
     const bottomLines = hasBottom ? wrapLines(f.textBottom!, fontSizeBottom, size) : []

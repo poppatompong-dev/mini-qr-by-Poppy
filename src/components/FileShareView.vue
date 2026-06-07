@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
@@ -18,7 +18,12 @@ import {
   AlertCircle,
   Loader2,
   Layers,
-  Sparkles
+  Sparkles,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -106,7 +111,15 @@ const getFileTypeMeta = (filename: string) => {
   }
 }
 
-// Fetch log entry
+// Storage filename mapping
+const storageMap = ref<Record<string, string>>({})
+
+const getFileExtension = (filename: string): string => {
+  const parts = filename.split('.')
+  return parts.length > 1 ? `.${parts.pop()}` : ''
+}
+
+// Fetch log entry and map storage filenames
 const fetchShareDetails = async () => {
   if (!isSupabaseConfigured) {
     error.value = t('Supabase credentials missing. Check your settings.')
@@ -132,6 +145,30 @@ const fetchShareDetails = async () => {
     }
 
     shareData.value = data
+
+    // Map storage filenames
+    try {
+      const { data: storageFiles } = await supabase.storage
+        .from('qr-files')
+        .list(props.shareId)
+
+      if (storageFiles) {
+        const fileNamesInStorage = storageFiles.map((f: any) => f.name)
+        data.files_list.forEach((filename: string, index: number) => {
+          const ext = getFileExtension(filename)
+          const indexedName = `file_${index}${ext}`
+          if (fileNamesInStorage.includes(indexedName)) {
+            storageMap.value[filename] = indexedName
+          } else if (fileNamesInStorage.includes(filename)) {
+            storageMap.value[filename] = filename
+          } else {
+            storageMap.value[filename] = indexedName
+          }
+        })
+      }
+    } catch (storageErr) {
+      console.error('Failed to list files from storage:', storageErr)
+    }
   } catch (err: any) {
     console.error('Failed to load share metadata:', err)
     error.value = err.message || t('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
@@ -140,28 +177,28 @@ const fetchShareDetails = async () => {
   }
 }
 
-const getFileExtension = (filename: string): string => {
-  const parts = filename.split('.')
-  return parts.length > 1 ? `.${parts.pop()}` : ''
+// Helper to retrieve public URL of a file
+const getFileUrl = (filename: string) => {
+  const storageName = storageMap.value[filename] || filename
+  const { data } = supabase.storage
+    .from('qr-files')
+    .getPublicUrl(`${props.shareId}/${storageName}`)
+  return data.publicUrl
 }
 
 // Direct Download a single file
 const handleDownloadSingle = async (filename: string) => {
   try {
-    const index = shareData.value?.files_list.indexOf(filename) ?? -1
-    if (index === -1) throw new Error('File not found in share metadata')
-
-    const ext = getFileExtension(filename)
-    const storageFilename = `file_${index}${ext}`
-
+    const storageName = storageMap.value[filename] || filename
     let data, dlError
+    
     const res = await supabase.storage
       .from('qr-files')
-      .download(`${props.shareId}/${storageFilename}`)
+      .download(`${props.shareId}/${storageName}`)
     data = res.data
     dlError = res.error
 
-    if (dlError) {
+    if (dlError && storageName !== filename) {
       console.log('Indexed download failed, trying original name:', filename)
       const resFallback = await supabase.storage
         .from('qr-files')
@@ -193,17 +230,16 @@ const handleDownloadAllZip = async () => {
     
     let index = 0
     for (const filename of files) {
-      const ext = getFileExtension(filename)
-      const storageFilename = `file_${index}${ext}`
-      
+      const storageName = storageMap.value[filename] || filename
       let data, dlError
+      
       const res = await supabase.storage
         .from('qr-files')
-        .download(`${props.shareId}/${storageFilename}`)
+        .download(`${props.shareId}/${storageName}`)
       data = res.data
       dlError = res.error
 
-      if (dlError) {
+      if (dlError && storageName !== filename) {
         console.log('Indexed zip item download failed, trying original name:', filename)
         const resFallback = await supabase.storage
           .from('qr-files')
@@ -234,6 +270,87 @@ const handleDownloadAllZip = async () => {
 
 const goBackHome = () => {
   window.location.href = window.location.origin + window.location.pathname
+}
+
+// Preview Modal State
+const isPreviewOpen = ref(false)
+const currentPreviewIndex = ref(0)
+const textFileContent = ref('')
+const textFileLoading = ref(false)
+const textFileError = ref(false)
+
+const currentPreviewFilename = computed(() => {
+  if (!shareData.value) return ''
+  return shareData.value.files_list[currentPreviewIndex.value] || ''
+})
+
+const currentPreviewUrl = computed(() => {
+  if (!currentPreviewFilename.value) return ''
+  return getFileUrl(currentPreviewFilename.value)
+})
+
+const currentPreviewType = computed(() => {
+  const fn = currentPreviewFilename.value
+  if (!fn) return 'other'
+  const ext = fn.split('.').pop()?.toLowerCase() || ''
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return 'image'
+  if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio'
+  if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
+  if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css'].includes(ext)) return 'text'
+  if (ext === 'pdf') return 'pdf'
+  return 'other'
+})
+
+const loadTextContent = async (url: string) => {
+  textFileLoading.value = true
+  textFileError.value = false
+  textFileContent.value = ''
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error()
+    textFileContent.value = await res.text()
+  } catch (e) {
+    textFileError.value = true
+  } finally {
+    textFileLoading.value = false
+  }
+}
+
+watch([currentPreviewIndex, isPreviewOpen], async () => {
+  if (isPreviewOpen.value && currentPreviewType.value === 'text' && currentPreviewUrl.value) {
+    await loadTextContent(currentPreviewUrl.value)
+  }
+})
+
+const openPreview = (filename: string) => {
+  if (!shareData.value) return
+  const index = shareData.value.files_list.indexOf(filename)
+  if (index !== -1) {
+    currentPreviewIndex.value = index
+    isPreviewOpen.value = true
+  }
+}
+
+const nextPreview = () => {
+  if (!shareData.value) return
+  if (currentPreviewIndex.value < shareData.value.files_list.length - 1) {
+    currentPreviewIndex.value++
+  } else {
+    currentPreviewIndex.value = 0
+  }
+}
+
+const prevPreview = () => {
+  if (!shareData.value) return
+  if (currentPreviewIndex.value > 0) {
+    currentPreviewIndex.value--
+  } else {
+    currentPreviewIndex.value = shareData.value.files_list.length - 1
+  }
+}
+
+const closePreview = () => {
+  isPreviewOpen.value = false
 }
 
 onMounted(() => {
@@ -353,14 +470,23 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Right: Action Download -->
-              <button
-                @click="handleDownloadSingle(filename)"
-                class="hover:text-zinc-850 flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-200"
-                :title="t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์'"
-              >
-                <Download class="size-4" />
-              </button>
+              <!-- Right: Actions (View & Download) -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  @click="openPreview(filename)"
+                  class="hover:text-zinc-850 flex size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  :title="t('ดูตัวอย่างไฟล์') || 'ดูตัวอย่างไฟล์'"
+                >
+                  <Eye class="size-4" />
+                </button>
+                <button
+                  @click="handleDownloadSingle(filename)"
+                  class="hover:text-zinc-850 flex size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  :title="t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์'"
+                >
+                  <Download class="size-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -407,6 +533,162 @@ onMounted(() => {
         </button>
       </div>
 
+    </div>
+
+    <!-- Preview Modal -->
+    <div
+      v-if="isPreviewOpen && shareData"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-all duration-300"
+    >
+      <div
+        class="glass-card flex h-[80vh] w-full max-w-3xl flex-col border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/90 md:p-6"
+      >
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-zinc-200 pb-3.5 dark:border-zinc-800">
+          <div class="min-w-0 flex-1">
+            <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              พรีวิวไฟล์ (File Preview) — {{ currentPreviewIndex + 1 }} / {{ shareData.files_list.length }}
+            </span>
+            <h3 class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-200">
+              {{ currentPreviewFilename }}
+            </h3>
+          </div>
+          <button
+            @click="closePreview"
+            class="rounded-lg border border-zinc-200 p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          >
+            <X class="size-4" />
+          </button>
+        </div>
+
+        <!-- Modal Content Preview Area -->
+        <div class="flex-1 overflow-auto py-5 flex items-center justify-center min-h-0 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-xl my-4 border border-zinc-150/40 dark:border-zinc-800/40">
+          <!-- Image Preview -->
+          <div v-if="currentPreviewType === 'image'" class="flex max-h-full max-w-full items-center justify-center p-2">
+            <img
+              :src="currentPreviewUrl"
+              :alt="currentPreviewFilename"
+              class="max-h-[50vh] max-w-full rounded-lg object-contain shadow-md"
+            />
+          </div>
+
+          <!-- Audio Preview -->
+          <div v-else-if="currentPreviewType === 'audio'" class="w-full max-w-md p-6 text-center">
+            <div class="mb-4 mx-auto flex size-14 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400">
+              <FileAudio class="size-7" />
+            </div>
+            <audio controls class="w-full" :src="currentPreviewUrl"></audio>
+          </div>
+
+          <!-- Video Preview -->
+          <div v-else-if="currentPreviewType === 'video'" class="flex max-h-full max-w-full items-center justify-center p-2">
+            <video
+              controls
+              class="max-h-[50vh] max-w-full rounded-lg shadow-md"
+              :src="currentPreviewUrl"
+            ></video>
+          </div>
+
+          <!-- Text Preview -->
+          <div v-else-if="currentPreviewType === 'text'" class="w-full h-full p-4 overflow-auto">
+            <div v-if="textFileLoading" class="flex flex-col items-center justify-center h-full py-10">
+              <Loader2 class="size-6 animate-spin text-blue-600 dark:text-blue-400" />
+              <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ t('กำลังโหลดข้อมูล...') }}</p>
+            </div>
+            <div v-else-if="textFileError" class="flex flex-col items-center justify-center h-full text-center text-red-500">
+              <AlertCircle class="size-6 mb-2" />
+              <p class="text-xs font-bold">{{ t('ไม่สามารถพรีวิวไฟล์ข้อความนี้ได้') }}</p>
+            </div>
+            <pre v-else class="text-left font-mono text-xs whitespace-pre-wrap text-zinc-700 dark:text-zinc-300 select-text bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 h-full overflow-auto max-h-[50vh]">{{ textFileContent }}</pre>
+          </div>
+
+          <!-- PDF Preview -->
+          <div v-else-if="currentPreviewType === 'pdf'" class="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+            <iframe
+              :src="currentPreviewUrl"
+              class="hidden md:block w-full h-[50vh] rounded-lg border border-zinc-200 dark:border-zinc-800"
+            ></iframe>
+            <div class="md:hidden flex flex-col items-center">
+              <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400">
+                <FileText class="size-7" />
+              </div>
+              <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">{{ currentPreviewFilename }}</h4>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-4">คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์</p>
+              <a
+                :href="currentPreviewUrl"
+                target="_blank"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+              >
+                <ExternalLink class="size-3.5" />
+                <span>เปิดไฟล์ PDF</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Other Files Preview -->
+          <div v-else class="w-full max-w-sm p-6 text-center">
+            <div class="mb-4 mx-auto flex size-14 items-center justify-center rounded-full bg-zinc-150 dark:bg-zinc-850 text-zinc-650 dark:text-zinc-450">
+              <component
+                :is="getFileTypeMeta(currentPreviewFilename).icon"
+                class="size-7"
+              />
+            </div>
+            <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">{{ currentPreviewFilename }}</h4>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+              ไฟล์ประเภทนี้ยังไม่รองรับการแสดงตัวอย่างในเบราว์เซอร์
+            </p>
+            <button
+              @click="handleDownloadSingle(currentPreviewFilename)"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600 px-4 py-2 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+            >
+              <Download class="size-3.5" />
+              <span>ดาวน์โหลดไฟล์</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation & Actions Footer -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-200 pt-3.5 dark:border-zinc-800">
+          <!-- Left: Previous / Next buttons -->
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+            <button
+              @click="prevPreview"
+              class="flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+            >
+              <ChevronLeft class="size-4" />
+              <span>ย้อนกลับ</span>
+            </button>
+            <button
+              @click="nextPreview"
+              class="flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+            >
+              <span>ถัดไป</span>
+              <ChevronRight class="size-4" />
+            </button>
+          </div>
+
+          <!-- Right: Action Buttons -->
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+            <a
+              v-if="currentPreviewType !== 'other'"
+              :href="currentPreviewUrl"
+              target="_blank"
+              class="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+            >
+              <ExternalLink class="size-4" />
+              <span>เปิดในแท็บใหม่</span>
+            </a>
+            <button
+              @click="handleDownloadSingle(currentPreviewFilename)"
+              class="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+            >
+              <Download class="size-4" />
+              <span>ดาวน์โหลด</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </template>

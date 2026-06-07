@@ -122,7 +122,7 @@ watch(
 const image = ref()
 const width = ref()
 const height = ref()
-const margin = ref()
+const margin = ref(12)
 const imageMargin = ref()
 const imageSize = ref<number | undefined>()
 
@@ -291,7 +291,7 @@ watch(
 
 //#region /* Error correction level */
 const errorCorrectionLevels: ErrorCorrectionLevel[] = ['L', 'M', 'Q', 'H']
-const errorCorrectionLevel = ref<ErrorCorrectionLevel>('Q')
+const errorCorrectionLevel = ref<ErrorCorrectionLevel>('H')
 const ERROR_CORRECTION_LEVEL_LABELS: Record<ErrorCorrectionLevel, string> = {
   L: `Low (7%)`,
   M: `Medium (15%)`,
@@ -484,18 +484,22 @@ const allFramePresetOptions = computed(() => {
   return options.map((preset) => ({ value: preset.name, label: t(preset.name) }))
 })
 
-function applyFramePreset(preset: FramePreset) {
+function applyFramePreset(preset: FramePreset, enableFrame = true) {
   if (preset.style) {
     frameStyle.value = toFrameStyle(preset.style)
     loadFrameFont(preset.style.fontFamily)
   }
   const anyPreset = preset as any
-  frameTextTop.value = anyPreset.textTop || ''
-  frameTextBottom.value = anyPreset.textBottom || ''
-  frameTextTopSize.value = anyPreset.fontSizeTop ?? 18
-  frameTextBottomSize.value = anyPreset.fontSizeBottom ?? 18
-  frameTextTopColor.value = anyPreset.textColorTop || ''
-  frameTextBottomColor.value = anyPreset.textColorBottom || ''
+  if (anyPreset.textTop !== undefined) {
+    frameTextTop.value = anyPreset.textTop || ''
+  }
+  if (anyPreset.textBottom !== undefined) {
+    frameTextBottom.value = anyPreset.textBottom || ''
+  }
+  if (anyPreset.fontSizeTop !== undefined) frameTextTopSize.value = anyPreset.fontSizeTop
+  if (anyPreset.fontSizeBottom !== undefined) frameTextBottomSize.value = anyPreset.fontSizeBottom
+  if (anyPreset.textColorTop !== undefined) frameTextTopColor.value = anyPreset.textColorTop || ''
+  if (anyPreset.textColorBottom !== undefined) frameTextBottomColor.value = anyPreset.textColorBottom || ''
 
   if (preset.text) frameText.value = preset.text
   if (preset.position) frameTextPosition.value = preset.position
@@ -507,7 +511,9 @@ function applyFramePreset(preset: FramePreset) {
       frameTextBottom.value = preset.text
     }
   }
-  showFrame.value = true
+  if (enableFrame) {
+    showFrame.value = true
+  }
 }
 
 watch(selectedFramePresetKey, (newKey, prevKey) => {
@@ -918,12 +924,10 @@ onMounted(() => {
     }
   }
 
-  // Apply frame preset when QR preset does not define a frame
-  // Only apply default frame preset if QR env preset did not already enable a frame
   if (!showFrame.value) {
     const framePreset = allFramePresets.find((p) => p.name === selectedFramePresetKey.value)
     if (framePreset) {
-      applyFramePreset(framePreset)
+      applyFramePreset(framePreset, false)
     }
   } else {
     // Re-apply frame styles after mount so UI matches env/QR preset (avoids stale defaults)

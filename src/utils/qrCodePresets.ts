@@ -32,7 +32,7 @@ const defaultPresetOptions = {
   },
   width: 200,
   height: 200,
-  margin: 0,
+  margin: 12,
   type: 'svg' as DrawType
 }
 

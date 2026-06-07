@@ -18,6 +18,7 @@ const isScanning = ref(false)
 const CAMERA_PREFERENCE_KEY = 'qr-scanner-camera-preference'
 const isFrontCamera = ref(localStorage.getItem(CAMERA_PREFERENCE_KEY) === 'front')
 const hasMultipleCameras = ref(false)
+const qrboxSize = ref(250)
 
 const toggleCamera = () => {
   isFrontCamera.value = !isFrontCamera.value
@@ -97,7 +98,12 @@ const startScanning = async () => {
       cameraId,
       {
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight)
+          const size = Math.max(200, Math.min(280, Math.floor(minEdge * 0.7)))
+          qrboxSize.value = size
+          return { width: size, height: size }
+        },
         aspectRatio: 1.0,
         disableFlip: false
       },
@@ -166,7 +172,10 @@ defineExpose({
         v-if="isScanning && !isLoading"
         class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
       >
-        <div class="relative h-[260px] w-[260px] rounded-2xl border border-white/10 bg-black/15">
+        <div
+          class="relative rounded-2xl border border-white/10 bg-black/15 transition-all duration-300"
+          :style="{ width: `${qrboxSize + 10}px`, height: `${qrboxSize + 10}px` }"
+        >
           <!-- Corner brackets -->
           <div
             class="absolute -left-1.5 -top-1.5 size-6 rounded-tl-lg border-l-[3px] border-t-[3px] border-[var(--accent-gold)]"
