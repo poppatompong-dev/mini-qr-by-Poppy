@@ -16,12 +16,15 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog'
-import { X } from 'lucide-vue-next'
+import { X, Heart } from 'lucide-vue-next'
+import PromptPayModal from '@/components/PromptPayModal.vue'
 
 defineProps<{
   isDarkMode: boolean
   isDarkModePreferenceSetBySystem: boolean
 }>()
+
+const isPromptPayOpen = ref(false)
 
 const emit = defineEmits<{
   (e: 'toggle-dark-mode'): void
@@ -167,9 +170,12 @@ onUnmounted(() => {
       </Dialog>
       <div class="flex flex-col gap-4">
         <!-- App title -->
-        <div class="flex flex-col items-start leading-none">
-          <h1 class="text-xl font-black text-gray-700 dark:text-gray-100">MiniQR</h1>
-          <span class="mt-0.5 text-[9px] font-semibold text-zinc-400 dark:text-zinc-500">by Poppy</span>
+        <div class="flex flex-col items-start gap-1 leading-none">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-xl font-black text-[var(--text-primary)]">MiniQR</h1>
+            <span class="bg-[var(--accent-gold)]/10 border-[var(--accent-gold)]/30 rounded border px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-[var(--accent-gold)]">GOV</span>
+          </div>
+          <span class="dark:text-zinc-550 text-left text-[9px] font-semibold text-zinc-400">เทศบาลนครนครสวรรค์</span>
         </div>
 
         <!-- Dark mode toggle -->
@@ -305,29 +311,30 @@ onUnmounted(() => {
         <!-- Footer Section for Mobile (hidden on md and up) -->
         <div
           v-if="!hideCredits"
-          class="relative flex flex-col gap-2 text-sm text-zinc-600 dark:text-zinc-400 md:hidden"
+          class="dark:text-zinc-455 relative flex flex-col gap-2 text-xs text-zinc-500 md:hidden"
         >
-          <div class="flex items-center justify-between gap-1">
+          <div class="flex flex-col gap-2 rounded-xl border border-[var(--border-zinc)] bg-zinc-50/50 p-3 dark:bg-zinc-950/20">
             <span class="text-start">
               {{ t('Created by') }}
-              <br />
               <a
-                href="https://github.com/lyqht"
+                href="https://www.nsm.go.th"
                 target="_blank"
-                class="text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300"
-                >Estee Tey 🐧🌻</a
+                class="mt-0.5 block font-bold text-[var(--text-primary)] no-underline transition-colors hover:text-[var(--accent-gold)]"
+                >ฝ่ายเทคโนโลยีสารสนเทศ เทศบาลนครนครสวรรค์</a
               >
             </span>
-            <a
-              href="https://github.com/sponsors/lyqht?frequency=one-time&sponsor=lyqht"
-              target="_blank"
-              class="secondary-button"
+            <button
+              @click="isPromptPayOpen = true"
+              class="border-[var(--accent-gold)]/30 flex w-full items-center justify-center gap-1.5 rounded-lg border bg-[var(--primary)] py-1.5 text-xs font-bold text-[var(--primary-foreground)] shadow transition-all hover:scale-[1.02] active:scale-95"
               :aria-label="t('Sponsor')"
-              >{{ t('Sponsor') }}</a
             >
+              <Heart class="size-3.5 text-[var(--accent-gold)]" />
+              <span>{{ t('Sponsor') }}</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
+    <PromptPayModal v-model:open="isPromptPayOpen" />
   </div>
 </template>

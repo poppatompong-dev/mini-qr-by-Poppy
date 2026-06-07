@@ -314,27 +314,45 @@ defineExpose({
 <template>
   <div class="relative mx-auto w-full max-w-xl">
     <!-- Decoded Results Card -->
-    <div v-if="capturedData" class="scan-results-entrance glass-card border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8">
+    <div
+      v-if="capturedData"
+      class="scan-results-entrance glass-card border border-zinc-200 bg-white p-6 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8"
+    >
       <div class="mb-6 flex flex-col items-center justify-center">
-        <div class="mb-3 flex size-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+        <div
+          class="bg-[var(--primary)]/10 dark:bg-[var(--accent-gold)]/10 mb-3 flex size-14 items-center justify-center rounded-2xl text-[var(--primary)] dark:text-[var(--accent-gold)]"
+        >
           <span v-html="qrCodeTypeIcon" class="inline-block size-6"></span>
         </div>
-        <h3 class="mb-1.5 text-base font-bold text-zinc-800 dark:text-zinc-100">{{ t('QR Code Content') }}</h3>
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+        <h3 class="mb-1.5 text-base font-bold text-zinc-800 dark:text-zinc-100">
+          {{ t('QR Code Content') }}
+        </h3>
+        <span
+          class="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+        >
           {{ typeLabel }}
         </span>
       </div>
 
       <!-- Result content card -->
-      <div class="mx-auto mb-6 max-w-md rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-left dark:border-zinc-800/80 dark:bg-zinc-950/20">
-        <span class="mb-2 block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">ข้อมูลสแกน (Decoded Data)</span>
+      <div
+        class="mx-auto mb-6 max-w-md rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 text-left dark:border-zinc-800/80 dark:bg-zinc-950/20"
+      >
+        <span
+          class="mb-2 block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"
+          >ข้อมูลสแกน (Decoded Data)</span
+        >
         <div class="no-scrollbar max-h-48 overflow-auto">
           <component
             :is="isActionable ? 'a' : 'p'"
             :href="isActionable ? formattedData : undefined"
             :target="qrCodeType === 'url' ? '_blank' : undefined"
             class="block break-all font-mono text-xs text-zinc-700 no-underline hover:underline dark:text-zinc-300"
-            :class="isActionable ? 'text-blue-600 dark:text-blue-400 font-semibold cursor-pointer' : ''"
+            :class="
+              isActionable
+                ? 'cursor-pointer font-semibold text-[var(--primary)] dark:text-[var(--accent-gold)]'
+                : ''
+            "
           >
             {{ capturedData }}
           </component>
@@ -349,17 +367,58 @@ defineExpose({
             class="flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-xs font-semibold text-zinc-700 outline-none transition-all hover:scale-[1.02] hover:bg-zinc-100 active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
             @click="copyToClipboard"
           >
-            <svg v-if="!copySuccess" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg
+              v-if="!copySuccess"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <svg
+              v-else
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="text-emerald-500"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
             <span>{{ copySuccess ? t('Copied!') : t('Copy to clipboard') }}</span>
           </button>
 
           <button
             type="button"
-            class="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none transition-all hover:scale-[1.02] hover:bg-blue-700 active:scale-[0.98]"
+            class="border-[var(--accent-gold)]/25 flex items-center justify-center gap-1.5 rounded-xl border bg-[var(--primary)] px-4 py-2.5 text-xs font-bold text-[var(--primary-foreground)] shadow-md outline-none transition-all hover:scale-[1.02] hover:bg-[var(--accent-hover)] active:scale-[0.98]"
             @click="$emit('create-qr', capturedData)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
             <span>{{ t('Create QR Code with this data') }}</span>
           </button>
         </div>
@@ -369,21 +428,41 @@ defineExpose({
           class="flex w-full items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white py-2.5 text-xs font-bold text-zinc-600 outline-none transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
           @click="resetCapture"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
           <span>{{ t('Scan Another') }}</span>
         </button>
       </div>
     </div>
 
     <!-- Active Camera Viewport Card -->
-    <div v-else-if="showCameraScanner" class="glass-card w-full border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40">
+    <div
+      v-else-if="showCameraScanner"
+      class="glass-card w-full border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40"
+    >
       <QRCodeCameraScanner @qr-detected="onQRDetected" @cancel="onCameraScannerCancel" />
     </div>
 
     <!-- Dropzone Scan Controls Card -->
-    <div v-else class="glass-card border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8">
+    <div
+      v-else
+      class="glass-card border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-8"
+    >
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-10">
-        <div class="dark:border-zinc-850 mb-4 size-10 animate-spin rounded-full border-4 border-solid border-zinc-200 border-t-blue-500"></div>
+        <div
+          class="dark:border-zinc-850 mb-4 size-10 animate-spin rounded-full border-4 border-solid border-zinc-200 border-t-[var(--primary)] dark:border-t-[var(--accent-gold)]"
+        ></div>
         <p class="text-xs font-bold text-zinc-500 dark:text-zinc-400">{{ t('Processing...') }}</p>
       </div>
 
@@ -392,14 +471,18 @@ defineExpose({
 
       <div class="flex flex-col gap-6" v-if="!isLoading">
         <div class="text-center">
-          <h3 class="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-100">{{ t('Scan a QR Code') }}</h3>
+          <h3
+            class="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-100"
+          >
+            {{ t('Scan a QR Code') }}
+          </h3>
 
           <!-- Drag Dropzone -->
           <div
             :class="[
               'upload-dropzone-pulse duration-350 cursor-pointer rounded-2xl border-2 border-dashed p-6 py-10 text-center outline-none transition-all',
               isDraggingOver
-                ? 'scale-[1.01] border-[var(--accent-blue)] bg-blue-500/5 dark:bg-blue-950/10'
+                ? 'bg-[var(--primary)]/5 dark:bg-[var(--primary)]/10 scale-[1.01] border-[var(--accent-blue)]'
                 : 'hover:border-zinc-350 border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/10 dark:hover:border-zinc-700'
             ]"
             :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
@@ -411,11 +494,31 @@ defineExpose({
             @drop="handleDrop"
           >
             <div class="flex flex-col items-center gap-2.5">
-              <div class="flex size-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:bg-zinc-800 dark:text-zinc-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div
+                class="bg-[var(--primary)]/10 dark:bg-[var(--accent-gold)]/10 flex size-12 items-center justify-center rounded-xl text-[var(--primary)] transition-transform duration-300 hover:-translate-y-0.5 dark:text-[var(--accent-gold)]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
               </div>
-              <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{ t('Upload QR Code Image') }}</p>
-              <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">{{ t('or drag and drop an image here') }}</p>
+              <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                {{ t('Upload QR Code Image') }}
+              </p>
+              <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
+                {{ t('or drag and drop an image here') }}
+              </p>
             </div>
           </div>
           <input
@@ -427,7 +530,10 @@ defineExpose({
           />
 
           <!-- Error Alert -->
-          <p v-if="errorMessage" class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-500">
+          <p
+            v-if="errorMessage"
+            class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-500"
+          >
             {{ errorMessage }}
           </p>
 
@@ -439,7 +545,9 @@ defineExpose({
           <!-- Divider line -->
           <div class="my-6 flex items-center justify-center gap-3">
             <div class="h-px flex-1 bg-zinc-100 dark:bg-zinc-800"></div>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{{ t('or') }}</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{{
+              t('or')
+            }}</span>
             <div class="h-px flex-1 bg-zinc-100 dark:bg-zinc-800"></div>
           </div>
 
@@ -447,11 +555,26 @@ defineExpose({
           <div class="mx-auto flex max-w-sm items-center justify-center gap-2">
             <!-- Camera Scanner -->
             <button
-              class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none transition-all hover:scale-[1.02] hover:bg-blue-700 active:scale-[0.98]"
+              class="border-[var(--accent-gold)]/25 flex flex-1 items-center justify-center gap-2 rounded-xl border bg-[var(--primary)] px-4 py-2.5 text-xs font-bold text-[var(--primary-foreground)] shadow-md outline-none transition-all hover:scale-[1.02] hover:bg-[var(--accent-hover)] active:scale-[0.98]"
               @click="startCameraScanning"
               type="button"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
               {{ t('Scan with Camera') }}
             </button>
 
@@ -462,9 +585,25 @@ defineExpose({
               @click="pasteFromClipboard(null)"
               type="button"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
               {{ t('Paste') }}
-              <span class="rounded bg-zinc-200/50 px-1 py-0.5 font-mono text-[9px] opacity-60 dark:bg-zinc-800" v-html="KEY_COMBINATION_PASTE"></span>
+              <span
+                class="rounded bg-zinc-200/50 px-1 py-0.5 font-mono text-[9px] opacity-60 dark:bg-zinc-800"
+                v-html="KEY_COMBINATION_PASTE"
+              ></span>
             </button>
           </div>
         </div>

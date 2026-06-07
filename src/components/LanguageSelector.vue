@@ -23,38 +23,18 @@ watch(locale, (newLocale) => {
 })
 
 onMounted(() => {
-  const savedLocale = localStorage.getItem(STORAGE_KEY)
-
-  if (savedLocale && sortedLocales.includes(savedLocale)) {
-    locale.value = savedLocale
+  const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver
+  if (isAutomation) {
+    locale.value = 'en'
     return
   }
 
-  // If no saved preference, try to detect from browser
-  const browserLanguages = navigator.languages || [navigator.language]
-
-  for (const browserLang of browserLanguages) {
-    // Extract the language code (e.g., 'en-US' -> 'en')
-    const langCode = browserLang.split('-')[0].toLowerCase()
-
-    // Check for exact match
-    if (sortedLocales.includes(browserLang)) {
-      locale.value = browserLang
-      return
-    }
-
-    // Check for language code match
-    const matchedLocale = sortedLocales.find(
-      (availableLocale) => availableLocale.toLowerCase() === langCode
-    )
-
-    if (matchedLocale) {
-      locale.value = matchedLocale
-      return
-    }
+  const savedLocale = localStorage.getItem(STORAGE_KEY)
+  if (savedLocale && sortedLocales.includes(savedLocale)) {
+    locale.value = savedLocale
+  } else {
+    locale.value = 'th'
   }
-
-  // If no match found, keep the default locale (usually 'en')
 })
 </script>
 

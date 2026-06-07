@@ -350,5 +350,18 @@
   "สนับสนุนผู้พัฒนา": "Sponsor Developer",
   "คุณสามารถสนับสนุนนักวิชาการคอมพิวเตอร์ เทศบาลนครนครสวรรค์ ได้ที่นี่": "You can support the Nakhon Sawan Municipality Computer Technical Officer here",
   "Edit & Preview Row": "Edit & Preview Row",
-  "QR Code Data / Message": "QR Code Data / Message"
+  "QR Code Data / Message": "QR Code Data / Message",
+  "Dots & Style": "Dots & Style",
+  "Colors & Frame Settings": "Colors & Frame Settings",
+  "Logo & Center": "Logo & Center",
+  "Advanced settings": "Advanced settings",
+  "User Guide": "User Guide",
+  "1. Select Data Type": "1. Select Data Type",
+  "Select your preferred content type (Text, Link, Wi-Fi, Files, etc.)": "Select your preferred content type (Text, Link, Wi-Fi, Files, etc.)",
+  "2. Enter Details": "2. Enter Details",
+  "Fill out the fields in the form to populate your QR Code data.": "Fill out the fields in the form to populate your QR Code data.",
+  "3. Customize Design": "3. Customize Design",
+  "Choose presets, colors, dots style, or embed your center logo.": "Choose presets, colors, dots style, or embed your center logo.",
+  "4. Export QR Code": "4. Export QR Code",
+  "Download your high-resolution QR Code in PNG, JPG, or SVG format.": "Download your high-resolution QR Code in PNG, JPG, or SVG format."
 }

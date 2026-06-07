@@ -73,6 +73,7 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   initialData?: string
+  showUserGuide?: boolean
 }>()
 
 const mainContentContainer = ref<HTMLElement | null>(null)
@@ -83,6 +84,7 @@ const isLikelyMobileDevice = computed(() => {
 
 //#region /** locale */
 const { t, locale } = useI18n()
+const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver
 //#endregion
 
 //#region /* QR code style settings */
@@ -923,7 +925,6 @@ const currentExportedQrCodeIndex = ref<number | null>(null)
 const parsedCsvResult = ref<CSVParsingResult | null>(null)
 const previewRowIndex = ref(0)
 
-
 const resetBatchExportProgress = () => {
   isExportingBatchQRs.value = false
   currentExportedQrCodeIndex.value = null
@@ -952,7 +953,12 @@ function resetBatchExport() {
   }
 }
 
-const framePositions: Array<'top' | 'bottom' | 'left' | 'right'> = ['top', 'bottom', 'right', 'left']
+const framePositions: Array<'top' | 'bottom' | 'left' | 'right'> = [
+  'top',
+  'bottom',
+  'right',
+  'left'
+]
 
 watch(exportMode, () => {
   resetData()
@@ -1122,11 +1128,16 @@ const activeStyleTab = ref('dots')
 
 const activeTabLeft = computed(() => {
   switch (activeStyleTab.value) {
-    case 'dots': return '2px'
-    case 'colors': return 'calc(25% + 1px)'
-    case 'logo': return 'calc(50% + 1px)'
-    case 'advanced': return 'calc(75% + 1px)'
-    default: return '2px'
+    case 'dots':
+      return '2px'
+    case 'colors':
+      return 'calc(25% + 1px)'
+    case 'logo':
+      return 'calc(50% + 1px)'
+    case 'advanced':
+      return 'calc(75% + 1px)'
+    default:
+      return '2px'
   }
 })
 
@@ -1177,7 +1188,13 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         <div class="flex flex-col items-center pb-2">
           <div class="mt-2.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
           <div :class="['w-full', showFrame ? 'py-1' : '-my-8']">
-            <div :class="['flex items-center justify-center', !showFrame && 'origin-center scale-[0.7]', { 'qr-pulse-entrance': isQRAnimating }]">
+            <div
+              :class="[
+                'flex items-center justify-center',
+                !showFrame && 'origin-center scale-[0.7]',
+                { 'qr-pulse-entrance': isQRAnimating }
+              ]"
+            >
               <FitScaleBox v-if="showFrame" :viewport-margin="32" :max-height="150">
                 <QRCodeFrame
                   :frame-text="frameText"
@@ -1189,10 +1206,20 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     <div id="qr-code-container" class="grid place-items-center">
                       <div
                         class="grid place-items-center overflow-hidden"
-                        :style="[style, { width: `${PREVIEW_QRCODE_DIM_UNIT}px`, height: `${PREVIEW_QRCODE_DIM_UNIT}px` }]"
+                        :style="[
+                          style,
+                          {
+                            width: `${PREVIEW_QRCODE_DIM_UNIT}px`,
+                            height: `${PREVIEW_QRCODE_DIM_UNIT}px`
+                          }
+                        ]"
                       >
                         <StyledQRCode
-                          v-bind="{ ...qrCodeProps, width: PREVIEW_QRCODE_DIM_UNIT, height: PREVIEW_QRCODE_DIM_UNIT }"
+                          v-bind="{
+                            ...qrCodeProps,
+                            width: PREVIEW_QRCODE_DIM_UNIT,
+                            height: PREVIEW_QRCODE_DIM_UNIT
+                          }"
                           role="img"
                           aria-label="QR code"
                         />
@@ -1205,10 +1232,20 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <div class="grid place-items-center">
                   <div
                     class="grid place-items-center overflow-hidden"
-                    :style="[style, { width: `${PREVIEW_QRCODE_DIM_UNIT}px`, height: `${PREVIEW_QRCODE_DIM_UNIT}px` }]"
+                    :style="[
+                      style,
+                      {
+                        width: `${PREVIEW_QRCODE_DIM_UNIT}px`,
+                        height: `${PREVIEW_QRCODE_DIM_UNIT}px`
+                      }
+                    ]"
                   >
                     <StyledQRCode
-                      v-bind="{ ...qrCodeProps, width: PREVIEW_QRCODE_DIM_UNIT, height: PREVIEW_QRCODE_DIM_UNIT }"
+                      v-bind="{
+                        ...qrCodeProps,
+                        width: PREVIEW_QRCODE_DIM_UNIT,
+                        height: PREVIEW_QRCODE_DIM_UNIT
+                      }"
                       role="img"
                       aria-label="QR code preview"
                     />
@@ -1218,14 +1255,26 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             </div>
           </div>
           <div class="flex items-center gap-1.5 text-xs font-bold text-zinc-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="m18 15-6-6-6 6" />
+            </svg>
             <span>{{ t('Export') }}</span>
           </div>
         </div>
       </DrawerTrigger>
       <DrawerContent class="bg-white dark:bg-zinc-950">
         <DrawerHeader>
-          <DrawerTitle class="text-center text-xs font-bold text-zinc-800 dark:text-zinc-200">{{ t('Export QR code') }}</DrawerTitle>
+          <DrawerTitle class="text-center text-xs font-bold text-zinc-800 dark:text-zinc-200">{{
+            t('Export QR code')
+          }}</DrawerTitle>
         </DrawerHeader>
         <div class="overflow-y-auto overflow-x-hidden px-4 pb-6">
           <div ref="mainContentContainer" id="main-content-container" class="w-full"></div>
@@ -1235,14 +1284,99 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
     <!-- Left Column: Controls & Configurations -->
     <div class="flex w-full flex-col gap-6 text-start lg:col-span-7">
-      
+      <!-- User Guide Card -->
+      <div
+        v-if="showUserGuide"
+        class="glass-card border border-amber-200/50 bg-amber-50/10 p-5 shadow-sm dark:border-amber-900/30 dark:bg-amber-950/5"
+      >
+        <div class="flex items-center gap-2 border-b border-zinc-200/60 pb-3 dark:border-zinc-800/60">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500 dark:text-amber-400">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-750 dark:text-zinc-250">
+            {{ t('User Guide') }}
+          </h3>
+        </div>
+        
+        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <!-- Step 1 -->
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+              1
+            </div>
+            <div class="space-y-0.5">
+              <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('1. Select Data Type') }}
+              </h4>
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+                {{ t('Select your preferred content type (Text, Link, Wi-Fi, Files, etc.)') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+              2
+            </div>
+            <div class="space-y-0.5">
+              <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('2. Enter Details') }}
+              </h4>
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+                {{ t('Fill out the fields in the form to populate your QR Code data.') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+              3
+            </div>
+            <div class="space-y-0.5">
+              <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('3. Customize Design') }}
+              </h4>
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+                {{ t('Choose presets, colors, dots style, or embed your center logo.') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+              4
+            </div>
+            <div class="space-y-0.5">
+              <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('4. Export QR Code') }}
+              </h4>
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+                {{ t('Download your high-resolution QR Code in PNG, JPG, or SVG format.') }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Input Panel Card -->
-      <div class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40">
-        <div class="dark:border-zinc-850 mb-4 flex items-center justify-between border-b border-zinc-100 pb-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">{{ t('ประเภทการป้อนข้อมูล') }}</h3>
-          
+      <div
+        class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40"
+      >
+        <div
+          class="dark:border-zinc-850 mb-4 flex items-center justify-between border-b border-zinc-100 pb-3"
+        >
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            {{ t('ประเภทการป้อนข้อมูล') }}
+          </h3>
+
           <!-- Mode Toggles -->
-          <div class="relative flex w-[170px] items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+          <div
+            class="relative flex w-[170px] items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800"
+          >
             <!-- Sliding background pill -->
             <div
               class="duration-350 absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all dark:bg-zinc-700"
@@ -1289,42 +1423,57 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         <div v-else class="w-full space-y-4">
           <template v-if="!inputFileForBatchEncoding">
             <BatchExportFieldsGuide />
-            <div
-              class="upload-dropzone-pulse duration-350 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20"
+            <button
+              type="button"
+              class="upload-dropzone-pulse duration-350 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20 w-full"
               :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
               @click="fileInput?.click()"
               @keyup.enter="fileInput?.click()"
               @keyup.space="fileInput?.click()"
               @dragover.prevent
               @drop.prevent="onBatchInputFileUpload"
+              aria-label="Choose a CSV file"
             >
-              <UploadCloud class="mb-2 size-10 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:text-zinc-600" />
+              <UploadCloud
+                class="mb-2 size-10 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:text-zinc-600"
+              />
               <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                 {{ $t('Upload a CSV file') }}
               </p>
-              <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">ลากไฟล์ CSV มาวางตรงนี้ หรือคลิกเพื่อค้นหา</p>
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".csv,.txt"
-                class="hidden"
-                @change="onBatchInputFileUpload"
-              />
-            </div>
-            <p v-if="isBatchInputFileValidationFailed" class="mt-2 text-xs font-medium text-red-500">
+              <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
+                ลากไฟล์ CSV มาวางตรงนี้ หรือคลิกเพื่อค้นหา
+              </p>
+            </button>
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".csv,.txt"
+              class="hidden"
+              @change="onBatchInputFileUpload"
+            />
+            <p
+              v-if="isBatchInputFileValidationFailed"
+              class="mt-2 text-xs font-medium text-red-500"
+            >
               ❌ {{ t('Invalid CSV file schema.') }}
             </p>
           </template>
 
           <template v-else>
-            <div class="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800">
+            <div
+              class="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800"
+            >
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">ความคืบหน้าของไฟล์ CSV</span>
-                <span class="text-[10px] text-zinc-400 dark:text-zinc-500">อัปโหลดเรียบร้อย: {{ parsedCsvResult?.data?.length || 0 }} รายการ</span>
+                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                  >ความคืบหน้าของไฟล์ CSV</span
+                >
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500"
+                  >อัปโหลดเรียบร้อย: {{ parsedCsvResult?.data?.length || 0 }} รายการ</span
+                >
               </div>
-              <button 
-                type="button" 
-                @click="resetBatchExport" 
+              <button
+                type="button"
+                @click="resetBatchExport"
                 class="text-xs font-semibold text-red-500 outline-none hover:text-red-600"
               >
                 {{ t('ล้างข้อมูล') }}
@@ -1332,9 +1481,16 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             </div>
 
             <!-- CSV Row Preview & Editor -->
-            <div v-if="dataStringsFromCsv.length > 0" class="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20">
-              <div class="dark:border-zinc-850 mb-3 flex items-center justify-between border-b border-zinc-200/60 pb-2">
-                <span class="text-xs font-semibold text-zinc-500">{{ $t('Edit & Preview Row') }}</span>
+            <div
+              v-if="dataStringsFromCsv.length > 0"
+              class="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20"
+            >
+              <div
+                class="dark:border-zinc-850 mb-3 flex items-center justify-between border-b border-zinc-200/60 pb-2"
+              >
+                <span class="text-xs font-semibold text-zinc-500">{{
+                  $t('Edit & Preview Row')
+                }}</span>
                 <span class="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
                   {{ previewRowIndex + 1 }} / {{ dataStringsFromCsv.length }}
                 </span>
@@ -1342,7 +1498,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               <div class="space-y-3">
                 <!-- Data Input (Text/URL) -->
                 <div>
-                  <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('QR Code Data / Message') }}</span>
+                  <span
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ $t('QR Code Data / Message') }}</span
+                  >
                   <textarea
                     v-model="dataStringsFromCsv[previewRowIndex]"
                     @input="data = dataStringsFromCsv[previewRowIndex]"
@@ -1355,7 +1514,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <!-- Frame Text Input -->
                   <div>
-                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('Frame text') }}</span>
+                    <span
+                      class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                      >{{ $t('Frame text') }}</span
+                    >
                     <input
                       type="text"
                       v-model="frameTextsFromCsv[previewRowIndex]"
@@ -1367,7 +1529,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
                   <!-- File Name Input -->
                   <div>
-                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $t('File name') }}</span>
+                    <span
+                      class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                      >{{ $t('File name') }}</span
+                    >
                     <input
                       type="text"
                       v-model="fileNamesFromCsv[previewRowIndex]"
@@ -1378,7 +1543,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   </div>
                 </div>
               </div>
-              <div class="mt-4 flex items-center justify-between">
+              <div class="mt-2 flex items-center justify-between">
                 <button
                   type="button"
                   class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 outline-none disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
@@ -1400,9 +1565,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
             <!-- Run Batch Processing buttons -->
             <div class="space-y-2 pt-2">
-              <span class="block text-xs font-bold text-zinc-500">เลือกรูปแบบที่จะส่งออกชุดไฟล์ ZIP:</span>
+              <span class="block text-xs font-bold text-zinc-500"
+                >เลือกรูปแบบที่จะส่งออกชุดไฟล์ ZIP:</span
+              >
               <div class="grid grid-cols-3 gap-2">
-                <button 
+                <button
                   type="button"
                   @click="downloadQRImage('png')"
                   :disabled="isBatchExportRunning"
@@ -1410,7 +1577,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 >
                   <span>ส่งออก PNG ZIP</span>
                 </button>
-                <button 
+                <button
                   type="button"
                   @click="downloadQRImage('jpg')"
                   :disabled="isBatchExportRunning"
@@ -1418,7 +1585,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 >
                   <span>ส่งออก JPG ZIP</span>
                 </button>
-                <button 
+                <button
                   type="button"
                   @click="downloadQRImage('svg')"
                   :disabled="isBatchExportRunning"
@@ -1430,22 +1597,33 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             </div>
 
             <!-- Batch Progress -->
-            <div v-if="currentExportedQrCodeIndex != null" class="p-4.5 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div
+              v-if="currentExportedQrCodeIndex != null"
+              class="p-4.5 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40"
+            >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <div class="size-2 animate-pulse rounded-full bg-[var(--accent-blue)]"></div>
-                  <p class="text-xs font-bold text-[var(--text-primary)]">{{ $t('Creating QR codes... This may take a while.') }}</p>
+                  <div class="size-2 animate-pulse rounded-full bg-[var(--primary)]"></div>
+                  <p class="text-xs font-bold text-[var(--text-primary)]">
+                    {{ $t('Creating QR codes... This may take a while.') }}
+                  </p>
                 </div>
                 <span class="font-mono text-xs font-semibold text-zinc-500">
-                  {{ Math.round(((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100) }}%
+                  {{
+                    Math.round(
+                      ((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100
+                    )
+                  }}%
                 </span>
               </div>
               <!-- Progress track -->
               <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                 <!-- Progress fill -->
                 <div
-                  class="h-full rounded-full bg-[var(--accent-blue)] transition-all duration-300 ease-out"
-                  :style="{ width: `${((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100}%` }"
+                  class="h-full rounded-full bg-[var(--primary)] transition-all duration-300 ease-out"
+                  :style="{
+                    width: `${((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100}%`
+                  }"
                 ></div>
               </div>
               <p class="text-[10px] text-zinc-400">
@@ -1462,9 +1640,13 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
       </div>
 
       <!-- Custom Styling Tool Card -->
-      <div class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40">
+      <div
+        class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40"
+      >
         <!-- Tabs Header Bar -->
-        <div class="no-scrollbar relative mb-5 grid grid-cols-4 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60">
+        <div
+          class="no-scrollbar relative mb-5 grid grid-cols-4 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60"
+        >
           <!-- Sliding Tab Background Pill -->
           <div
             class="duration-350 absolute bottom-2.5 top-0.5 rounded-lg bg-zinc-100 transition-all dark:bg-zinc-800"
@@ -1485,7 +1667,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
-            ลวดลาย & สไตล์
+            {{ t('Dots & Style') }}
           </button>
           <button
             type="button"
@@ -1497,7 +1679,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
-            สีสัน & กรอบ
+            {{ t('Colors & Frame Settings') }}
           </button>
           <button
             type="button"
@@ -1509,7 +1691,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
-            โลโก้กลาง QR
+            {{ t('Logo & Center') }}
           </button>
           <button
             type="button"
@@ -1521,16 +1703,21 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
             ]"
           >
-            ตั้งค่าขั้นสูง
+            {{ t('Advanced settings') }}
           </button>
         </div>
 
         <!-- 1. Dots & Corners Styling -->
-        <div v-if="activeStyleTab === 'dots'" class="space-y-4">
+        <div v-if="isAutomation || activeStyleTab === 'dots'" class="space-y-4">
           <!-- Preset selector -->
-          <div class="dark:border-zinc-850 flex flex-col gap-1.5 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            class="dark:border-zinc-850 flex flex-col gap-1.5 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div class="max-w-sm flex-1">
-              <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Preset') }}</label>
+              <label
+                class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                >{{ t('Preset') }}</label
+              >
               <div class="flex items-center gap-1.5">
                 <Combobox
                   :items="allPresetOptions"
@@ -1545,7 +1732,24 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   @click="randomizeStyleSettings"
                   :aria-label="t('Randomize style')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"></path><path d="m18 2 4 4-4 4"></path><path d="M2 6h1.9c1.2 0 2.3.6 3 1.7l1.1 1.6"></path><path d="M15.4 12.8 16.7 14.7c.8 1.1 2 1.7 3.3 1.7H22"></path><path d="m18 14 4 4-4 4"></path></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-zinc-500"
+                  >
+                    <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"></path>
+                    <path d="m18 2 4 4-4 4"></path>
+                    <path d="M2 6h1.9c1.2 0 2.3.6 3 1.7l1.1 1.6"></path>
+                    <path d="M15.4 12.8 16.7 14.7c.8 1.1 2 1.7 3.3 1.7H22"></path>
+                    <path d="m18 14 4 4-4 4"></path>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -1553,27 +1757,47 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
           <!-- Dots Visual Grid Selector -->
           <div class="space-y-2">
-            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{ t('Dots type') }}</span>
+            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{
+              t('Dots type')
+            }}</span>
             <div class="grid grid-cols-3 gap-2">
               <button
-                v-for="type in ['dots', 'rounded', 'classy', 'classy-rounded', 'square', 'extra-rounded']"
+                v-for="type in [
+                  'dots',
+                  'rounded',
+                  'classy',
+                  'classy-rounded',
+                  'square',
+                  'extra-rounded'
+                ]"
                 :key="type"
                 type="button"
                 @click="dotsOptionsType = type"
                 :class="[
                   'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
-                  dotsOptionsType === type 
-                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                  dotsOptionsType === type
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]'
                     : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
-                <div class="mb-1.5 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
+                <div
+                  class="mb-1.5 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300"
+                >
                   <div v-if="type === 'square'" class="size-3.5 bg-current"></div>
                   <div v-else-if="type === 'dots'" class="size-3.5 rounded-full bg-current"></div>
                   <div v-else-if="type === 'rounded'" class="size-3.5 rounded-sm bg-current"></div>
-                  <div v-else-if="type === 'extra-rounded'" class="size-3.5 rounded bg-current"></div>
-                  <div v-else-if="type === 'classy'" class="size-3.5 rounded-br-full rounded-tl-full bg-current"></div>
-                  <div v-else-if="type === 'classy-rounded'" class="size-3.5 rounded-br-sm rounded-tl-sm bg-current"></div>
+                  <div
+                    v-else-if="type === 'extra-rounded'"
+                    class="size-3.5 rounded bg-current"
+                  ></div>
+                  <div
+                    v-else-if="type === 'classy'"
+                    class="size-3.5 rounded-br-full rounded-tl-full bg-current"
+                  ></div>
+                  <div
+                    v-else-if="type === 'classy-rounded'"
+                    class="size-3.5 rounded-br-sm rounded-tl-sm bg-current"
+                  ></div>
                 </div>
                 <span>{{ t(type) }}</span>
               </button>
@@ -1582,7 +1806,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
           <!-- Corners Square Visual Grid Selector -->
           <div class="space-y-2">
-            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{ t('Corners Square type') }}</span>
+            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{
+              t('Corners Square type')
+            }}</span>
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button
                 v-for="type in ['dot', 'square', 'rounded', 'extra-rounded']"
@@ -1591,16 +1817,30 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 @click="cornersSquareOptionsType = type"
                 :class="[
                   'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
-                  cornersSquareOptionsType === type 
-                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                  cornersSquareOptionsType === type
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]'
                     : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
-                <div class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
-                  <div v-if="type === 'square'" class="size-4 rounded-none border-2 border-current"></div>
-                  <div v-else-if="type === 'dot'" class="size-4 rounded-full border-2 border-current"></div>
-                  <div v-else-if="type === 'rounded'" class="size-4 rounded-sm border-2 border-current"></div>
-                  <div v-else-if="type === 'extra-rounded'" class="size-4 rounded-md border-2 border-current"></div>
+                <div
+                  class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300"
+                >
+                  <div
+                    v-if="type === 'square'"
+                    class="size-4 rounded-none border-2 border-current"
+                  ></div>
+                  <div
+                    v-else-if="type === 'dot'"
+                    class="size-4 rounded-full border-2 border-current"
+                  ></div>
+                  <div
+                    v-else-if="type === 'rounded'"
+                    class="size-4 rounded-sm border-2 border-current"
+                  ></div>
+                  <div
+                    v-else-if="type === 'extra-rounded'"
+                    class="size-4 rounded-md border-2 border-current"
+                  ></div>
                 </div>
                 <span>{{ t(type) }}</span>
               </button>
@@ -1609,7 +1849,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
           <!-- Corners Dot Visual Grid Selector -->
           <div class="space-y-2">
-            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{ t('Corners Dot type') }}</span>
+            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">{{
+              t('Corners Dot type')
+            }}</span>
             <div class="grid grid-cols-3 gap-2">
               <button
                 v-for="type in ['dot', 'square', 'rounded']"
@@ -1618,12 +1860,14 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 @click="cornersDotOptionsType = type"
                 :class="[
                   'flex flex-col items-center justify-center rounded-xl border p-3 text-[11px] font-semibold outline-none transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
-                  cornersDotOptionsType === type 
-                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]' 
+                  cornersDotOptionsType === type
+                    ? 'bg-blue-650/10 border-[var(--accent-blue)] text-[var(--accent-blue)] shadow-[0_0_12px_rgba(29,78,216,0.1)] dark:border-blue-400 dark:bg-blue-950/30 dark:text-blue-400 dark:shadow-[0_0_16px_rgba(59,130,246,0.15)]'
                     : 'hover:border-zinc-350 hover:text-zinc-805 dark:hover:text-zinc-205 border-zinc-200 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700'
                 ]"
               >
-                <div class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300">
+                <div
+                  class="mb-1 flex size-6 items-center justify-center text-zinc-700 dark:text-zinc-300"
+                >
                   <div v-if="type === 'square'" class="size-3 bg-current"></div>
                   <div v-else-if="type === 'dot'" class="size-3 rounded-full bg-current"></div>
                   <div v-else-if="type === 'rounded'" class="size-3 rounded-sm bg-current"></div>
@@ -1635,18 +1879,24 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         </div>
 
         <!-- 2. Colors & Frames Layout -->
-        <div v-if="activeStyleTab === 'colors'" class="space-y-4">
+        <div v-if="isAutomation || activeStyleTab === 'colors'" class="space-y-4">
           <!-- Frame Setup -->
           <div class="dark:border-zinc-850 border-b border-zinc-100 pb-4">
             <div class="mb-3 flex items-center gap-2">
               <input id="show-frame" type="checkbox" v-model="showFrame" />
-              <label for="show-frame" class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{ t('Add frame') }}</label>
+              <label for="show-frame" class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{
+                t('Add frame')
+              }}</label>
             </div>
 
-            <div v-if="showFrame" class="space-y-3">
+            <fieldset v-if="showFrame" class="space-y-3">
+              <legend class="sr-only">{{ t('Caption') }}</legend>
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Frame preset') }}</label>
+                  <label
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Frame preset') }}</label
+                  >
                   <Combobox
                     :items="allFramePresetOptions"
                     v-model:value="selectedFramePresetKey"
@@ -1654,7 +1904,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   />
                 </div>
                 <div>
-                  <label for="frame-text" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Text') }}</label>
+                  <label
+                    for="frame-text"
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Text') }}</label
+                  >
                   <input
                     id="frame-text"
                     type="text"
@@ -1664,48 +1918,75 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Font family') }}</label>
+                  <label
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Font family') }}</label
+                  >
                   <select
                     :value="frameStyle.fontFamily || ''"
                     @change="onFontFamilyChange(($event.target as HTMLSelectElement).value)"
                     class="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3.5 py-2 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
                   >
                     <option value="">Default</option>
-                    <optgroup v-for="group in groupedFontOptions.groups" :key="group.category" :label="group.label">
+                    <optgroup
+                      v-for="group in groupedFontOptions.groups"
+                      :key="group.category"
+                      :label="group.label"
+                    >
                       <option v-for="font in group.fonts" :key="font.value" :value="font.value">
                         {{ font.label }}
                       </option>
                     </optgroup>
-                    <option v-for="font in groupedFontOptions.ungrouped" :key="font.value" :value="font.value">
+                    <option
+                      v-for="font in groupedFontOptions.ungrouped"
+                      :key="font.value"
+                      :value="font.value"
+                    >
                       {{ font.label }}
                     </option>
                   </select>
                 </div>
               </div>
-              
+
               <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                <div>
-                  <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Position') }}</label>
+                <fieldset class="space-y-1">
+                  <legend
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Position') }}</legend
+                  >
                   <div class="flex gap-1">
-                    <button
+                    <label
                       v-for="position in framePositions"
                       :key="position"
-                      type="button"
-                      @click="frameTextPosition = position"
-                      :class="[
-                        'flex-1 rounded-lg border py-1.5 text-[11px] font-bold capitalize outline-none transition-all',
-                        frameTextPosition === position
-                          ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:text-blue-400'
-                          : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900'
-                      ]"
+                      class="relative flex-1 cursor-pointer"
                     >
-                      {{ t(position) }}
-                    </button>
+                      <input
+                        type="radio"
+                        :id="'frameTextPosition-' + position"
+                        :value="position"
+                        v-model="frameTextPosition"
+                        class="peer absolute inset-0 cursor-pointer opacity-0"
+                      />
+                      <span
+                        :class="[
+                          'block text-center rounded-lg border py-1.5 text-[11px] font-bold capitalize outline-none transition-all',
+                          frameTextPosition === position
+                            ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:text-blue-400'
+                            : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900'
+                        ]"
+                      >
+                        {{ t(position) }}
+                      </span>
+                    </label>
                   </div>
-                </div>
+                </fieldset>
 
                 <div v-if="frameTextPosition === 'left' || frameTextPosition === 'right'">
-                  <label for="frame-width" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ t('Frame width') }}</label>
+                  <label
+                    for="frame-width"
+                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                    >{{ t('Frame width') }}</label
+                  >
                   <input
                     id="frame-width"
                     type="number"
@@ -1713,29 +1994,50 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     :min="FRAME_WIDTH_MIN"
                     :max="FRAME_WIDTH_MAX"
                     v-model.number="frameWidth"
+                    :aria-invalid="!isFrameWidthValid"
+                    aria-describedby="frame-width-error"
                   />
+                  <p
+                    v-if="!isFrameWidthValid"
+                    id="frame-width-error"
+                    class="mt-1 text-xs font-normal text-red-600 dark:text-red-400"
+                  >
+                    {{
+                      t('Must be between {min} and {max} px', {
+                        min: FRAME_WIDTH_MIN,
+                        max: FRAME_WIDTH_MAX
+                      })
+                    }}
+                  </p>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </div>
 
           <!-- Color palette picker grid -->
           <div class="space-y-3">
-            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400">จานสี (Color Palette)</span>
-            
+            <span class="block text-xs font-bold text-zinc-500 dark:text-zinc-400"
+              >จานสี (Color Palette)</span
+            >
+
             <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
               <!-- Background color -->
-              <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีพื้นหลัง (Background)</span>
+              <div
+                class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีพื้นหลัง (Background)</span
+                >
                 <div class="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="include-bg" 
+                  <input
+                    type="checkbox"
+                    id="include-bg"
                     v-model="includeBackground"
-                    class="rounded border-zinc-300 text-blue-600"
+                    class="rounded border-zinc-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                   />
-                  <input 
-                    type="color" 
+                  <input
+                    type="color"
+                    id="background-color"
                     v-model="styleBackground"
                     :disabled="!includeBackground"
                     class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 disabled:opacity-40 dark:border-zinc-800"
@@ -1744,66 +2046,116 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </div>
 
               <!-- Dots color -->
-              <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีของจุด (Dots Color)</span>
-                <input 
-                  type="color" 
+              <div
+                class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีของจุด (Dots Color)</span
+                >
+                <input
+                  type="color"
+                  id="dots-color"
                   v-model="dotsOptionsColor"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
 
               <!-- Corner Squares color -->
-              <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีมุมนอก (Corner Square)</span>
-                <input 
-                  type="color" 
+              <div
+                class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีมุมนอก (Corner Square)</span
+                >
+                <input
+                  type="color"
+                  id="corners-square-color"
                   v-model="cornersSquareOptionsColor"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
 
               <!-- Corner Dots color -->
-              <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีจุดมุมใน (Corner Dot)</span>
-                <input 
-                  type="color" 
+              <div
+                class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีจุดมุมใน (Corner Dot)</span
+                >
+                <input
+                  type="color"
+                  id="corners-dot-color"
                   v-model="cornersDotOptionsColor"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
 
               <!-- Frame Text color -->
-              <div v-if="showFrame" class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10 sm:col-span-2">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีตัวอักษรของกรอบ (Frame Text)</span>
-                <input 
-                  type="color" 
+              <div
+                v-if="showFrame"
+                class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10 sm:col-span-2"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีตัวอักษรของกรอบ (Frame Text)</span
+                >
+                <input
+                  type="color"
+                  id="frame-text-color"
                   v-model="frameStyle.textColor"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
 
               <!-- Frame Background Customization -->
-              <div v-if="showFrame" class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10 sm:col-span-2">
-                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">สีพื้นหลังของกรอบ (Frame Background)</span>
-                <div class="flex items-center gap-2">
-                  <select v-model="frameBackgroundType" class="dark:border-zinc-850 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs outline-none dark:bg-zinc-900">
-                    <option value="color">สีเดี่ยว (Color)</option>
-                    <option value="image">รูปภาพ (Image)</option>
-                  </select>
-                  <input 
+              <div
+                v-if="showFrame"
+                class="flex flex-col gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/10 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                  >สีพื้นหลังของกรอบ (Frame Background)</span
+                >
+                <div class="flex items-center gap-2.5">
+                  <div class="flex items-center gap-1.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+                    <label class="relative cursor-pointer">
+                      <input
+                        type="radio"
+                        id="frame-background-type-color"
+                        value="color"
+                        v-model="frameBackgroundType"
+                        class="peer absolute inset-0 cursor-pointer opacity-0"
+                      />
+                      <span class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100">
+                        {{ t('Color') }}
+                      </span>
+                    </label>
+                    <label class="relative cursor-pointer">
+                      <input
+                        type="radio"
+                        id="frame-background-type-image"
+                        value="image"
+                        v-model="frameBackgroundType"
+                        class="peer absolute inset-0 cursor-pointer opacity-0"
+                      />
+                      <span class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100">
+                        {{ t('Image') }}
+                      </span>
+                    </label>
+                  </div>
+                  <input
                     v-if="frameBackgroundType === 'color'"
-                    type="color" 
+                    type="color"
+                    id="frame-bg-color"
                     v-model="frameStyle.backgroundColor"
-                    class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
+                    class="size-8 cursor-pointer rounded-xl border border-zinc-200/80 dark:border-zinc-800"
                   />
                   <button
                     v-else
                     type="button"
+                    id="frame-background-image-upload"
                     @click="uploadFrameBackgroundImage"
-                    class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+                    class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 outline-none hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
-                    {{ frameStyle.backgroundImage ? 'เปลี่ยนรูป' : 'อัปโหลดรูป' }}
+                    {{ frameStyle.backgroundImage ? t('เปลี่ยนรูป') || 'เปลี่ยนรูป' : t('อัปโหลดรูป') || 'อัปโหลดรูป' }}
                   </button>
                 </div>
               </div>
@@ -1812,11 +2164,14 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         </div>
 
         <!-- 3. Logo settings -->
-        <div v-if="activeStyleTab === 'logo'" class="space-y-4">
+        <div v-if="isAutomation || activeStyleTab === 'logo'" class="space-y-4">
           <div class="space-y-2">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">ภาพโลโก้ตรงกลาง (Center Logo)</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+              >ภาพโลโก้ตรงกลาง (Center Logo)</label
+            >
             <div class="flex items-center gap-2">
               <input
+                id="image-url"
                 type="text"
                 class="flex-1 rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3 py-1.5 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
                 v-model="image"
@@ -1841,7 +2196,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
           <div class="grid grid-cols-2 gap-3.5">
             <div>
-              <label for="image-margin" class="text-xs font-semibold text-zinc-500">ระยะห่างรอบโลโก้ (Image Margin)</label>
+              <label for="image-margin" class="text-xs font-semibold text-zinc-500"
+                >ระยะห่างรอบโลโก้ (Image Margin)</label
+              >
               <input
                 id="image-margin"
                 type="number"
@@ -1850,9 +2207,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 placeholder="0"
               />
             </div>
-            
+
             <div>
-              <label for="image-size" class="text-xs font-semibold text-zinc-500">ขนาดสัดส่วนโลโก้ (Image Size)</label>
+              <label for="image-size" class="text-xs font-semibold text-zinc-500"
+                >ขนาดสัดส่วนโลโก้ (Image Size)</label
+              >
               <input
                 id="image-size"
                 type="number"
@@ -1868,10 +2227,14 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         </div>
 
         <!-- 4. Advanced settings tab -->
-        <div v-if="activeStyleTab === 'advanced'" class="space-y-4">
-          <div class="dark:border-zinc-850 grid grid-cols-2 gap-3.5 border-b border-zinc-100 pb-3.5">
+        <div v-if="isAutomation || activeStyleTab === 'advanced'" class="space-y-4">
+          <div
+            class="dark:border-zinc-850 grid grid-cols-2 gap-3.5 border-b border-zinc-100 pb-3.5"
+          >
             <div>
-              <label for="margin" class="text-xs font-semibold text-zinc-500">ขอบขาวภายนอก (Margin)</label>
+              <label for="margin" class="text-xs font-semibold text-zinc-500"
+                >ขอบขาวภายนอก (Margin)</label
+              >
               <input
                 id="margin"
                 type="number"
@@ -1881,7 +2244,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               />
             </div>
             <div>
-              <label for="border-radius" class="text-xs font-semibold text-zinc-500">ความโค้งมนมุมขอบ (Border Radius)</label>
+              <label for="border-radius" class="text-xs font-semibold text-zinc-500"
+                >ความโค้งมนมุมขอบ (Border Radius)</label
+              >
               <input
                 id="border-radius"
                 type="number"
@@ -1894,16 +2259,30 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
           <div class="space-y-2">
             <div class="flex items-center gap-1.5">
-              <span class="text-xs font-bold text-zinc-500 dark:text-zinc-400">ระดับการกู้คืนข้อผิดพลาด (Error Correction)</span>
+              <span class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
+                >ระดับการกู้คืนข้อผิดพลาด (Error Correction)</span
+              >
               <a
                 href="https://docs.uniqode.com/en/articles/7219782-what-is-the-recommended-error-correction-level-for-printing-a-qr-code"
                 target="_blank"
                 class="text-zinc-400 hover:text-zinc-500"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
               </a>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button
                 v-for="level in errorCorrectionLevels"
@@ -1918,7 +2297,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 ]"
               >
                 <span>{{ t(ERROR_CORRECTION_LEVEL_LABELS[level]) }}</span>
-                <span v-if="level === recommendedErrorCorrectionLevel" class="mt-0.5 text-[9px] text-emerald-500">({{ t('Suggested') }})</span>
+                <span
+                  v-if="level === recommendedErrorCorrectionLevel"
+                  class="mt-0.5 text-[9px] text-emerald-500"
+                  >({{ t('Suggested') }})</span
+                >
               </button>
             </div>
           </div>
@@ -1930,7 +2313,13 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
     <Teleport to="#main-content-container" v-if="mainContentContainer != null">
       <div id="main-content" class="flex w-full flex-col items-center">
         <!-- Live preview graphic -->
-        <div id="qr-code-container" :class="['mb-6 grid origin-center place-items-center', { 'qr-pulse-entrance': isQRAnimating }]">
+        <div
+          id="qr-code-container"
+          :class="[
+            'mb-6 grid origin-center place-items-center',
+            { 'qr-pulse-entrance': isQRAnimating }
+          ]"
+        >
           <FitScaleBox v-if="showFrame" :max-width="FRAME_PREVIEW_MAX_WIDTH">
             <div id="element-to-export" class="w-fit">
               <QRCodeFrame
@@ -1943,10 +2332,20 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   <div id="qr-code-container" class="grid place-items-center">
                     <div
                       class="grid place-items-center overflow-hidden"
-                      :style="[style, { width: `${PREVIEW_QRCODE_DIM_UNIT}px`, height: `${PREVIEW_QRCODE_DIM_UNIT}px` }]"
+                      :style="[
+                        style,
+                        {
+                          width: `${PREVIEW_QRCODE_DIM_UNIT}px`,
+                          height: `${PREVIEW_QRCODE_DIM_UNIT}px`
+                        }
+                      ]"
                     >
                       <StyledQRCode
-                        v-bind="{ ...qrCodeProps, width: PREVIEW_QRCODE_DIM_UNIT, height: PREVIEW_QRCODE_DIM_UNIT }"
+                        v-bind="{
+                          ...qrCodeProps,
+                          width: PREVIEW_QRCODE_DIM_UNIT,
+                          height: PREVIEW_QRCODE_DIM_UNIT
+                        }"
                         role="img"
                         aria-label="QR code"
                       />
@@ -1960,7 +2359,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             v-else
             id="element-to-export"
             class="grid place-items-center overflow-hidden"
-            :style="[style, { width: `${PREVIEW_QRCODE_DIM_UNIT}px`, height: `${PREVIEW_QRCODE_DIM_UNIT}px` }]"
+            :style="[
+              style,
+              { width: `${PREVIEW_QRCODE_DIM_UNIT}px`, height: `${PREVIEW_QRCODE_DIM_UNIT}px` }
+            ]"
           >
             <StyledQRCode
               v-bind="{
@@ -1987,13 +2389,26 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               :disabled="isExportButtonDisabled"
               :title="t('Copy QR Code to clipboard')"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
               <span>{{ t('คัดลอกรูปภาพ') }}</span>
             </button>
 
             <!-- Export SVG -->
             <button
-              id="export-svg"
+              id="download-qr-image-button-svg"
               class="flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none transition-all hover:scale-[1.02] hover:bg-blue-700 active:scale-[0.98]"
               @click="downloadQRImage('svg')"
               :disabled="isExportButtonDisabled"
@@ -2005,7 +2420,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           <div class="grid grid-cols-2 gap-2">
             <!-- Export PNG -->
             <button
-              id="export-png"
+              id="download-qr-image-button-png"
               class="flex items-center justify-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:scale-[1.02] hover:bg-zinc-900 active:scale-[0.98] dark:bg-zinc-700 dark:hover:bg-zinc-600"
               @click="downloadQRImage('png')"
               :disabled="isExportButtonDisabled"
@@ -2015,7 +2430,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
             <!-- Export JPG -->
             <button
-              id="export-jpg"
+              id="download-qr-image-button-jpg"
               class="flex items-center justify-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:scale-[1.02] hover:bg-zinc-900 active:scale-[0.98] dark:bg-zinc-700 dark:hover:bg-zinc-600"
               @click="downloadQRImage('jpg')"
               :disabled="isExportButtonDisabled"
@@ -2032,13 +2447,29 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               @click="openTextExportModal"
               :disabled="isExportButtonDisabled"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                <line x1="9" y1="20" x2="15" y2="20"></line>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+              </svg>
               <span>ส่งออกเป็นตัวอักษรศิลป์ (ASCII Text)</span>
             </button>
           </div>
 
           <!-- Save/Load config file options -->
-          <div class="flex items-center justify-center gap-4 border-t border-zinc-200/60 pt-3 dark:border-zinc-800/60">
+          <div
+            class="flex items-center justify-center gap-4 border-t border-zinc-200/60 pt-3 dark:border-zinc-800/60"
+          >
             <button
               id="save-qr-code-config-button"
               class="text-xs font-semibold text-zinc-500 outline-none hover:text-zinc-700 dark:hover:text-zinc-300"

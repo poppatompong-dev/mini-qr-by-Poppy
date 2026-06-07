@@ -41,15 +41,15 @@ const qrOptions = computed(() => ({
   height: 240,
   margin: 2,
   dotsOptions: {
-    color: '#002B49',
+    color: '#2e1065', // Deep Purple
     type: 'rounded' as DotType
   },
   cornersSquareOptions: {
-    color: '#005D95',
+    color: '#b45309', // Luxury Gold/Amber
     type: 'extra-rounded' as CornerSquareType
   },
   cornersDotOptions: {
-    color: '#002B49',
+    color: '#2e1065',
     type: 'dot' as CornerDotType
   }
 }))
@@ -88,20 +88,20 @@ function copyPromptPayId() {
 
       <div class="flex flex-1 flex-col items-center overflow-y-auto py-6">
         <!-- PromptPay Header Card -->
-        <div class="mb-6 flex w-full max-w-[280px] flex-col items-center justify-between rounded-2xl bg-gradient-to-br from-[#002B49] to-[#005D95] p-4 text-white shadow-lg">
+        <div class="border-[var(--accent-gold)]/40 mb-6 flex w-full max-w-[280px] flex-col items-center justify-between rounded-2xl border bg-gradient-to-br from-[#2e1065] via-[#3b0764] to-[#5b21b6] p-4 text-white shadow-lg">
           <div class="mb-2 flex w-full items-center justify-between border-b border-white/20 pb-2">
-            <span class="text-xs font-semibold tracking-wider opacity-90">Prompt Pay</span>
-            <ShieldCheck class="size-4 text-emerald-400" />
+            <span class="text-xs font-semibold tracking-wider opacity-90">พร้อมเพย์ PromptPay</span>
+            <ShieldCheck class="size-4 text-[var(--accent-gold)]" />
           </div>
           <div class="text-center">
-            <p class="text-xs opacity-75">ชื่อบัญชี / Account Name</p>
-            <p class="max-w-[240px] truncate text-sm font-semibold">{{ ACCOUNT_NAME }}</p>
+            <p class="text-[10px] opacity-75">ชื่อบัญชี / Account Name</p>
+            <p class="max-w-[240px] truncate text-sm font-bold tracking-wide">{{ ACCOUNT_NAME }}</p>
           </div>
-          <div class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-1.5">
-            <span class="font-mono text-base font-bold tracking-widest">083-687-0393</span>
+          <div class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2">
+            <span class="font-mono text-base font-bold tracking-widest text-[var(--accent-gold)]">083-687-0393</span>
             <button 
               @click="copyPromptPayId" 
-              class="rounded bg-white px-2 py-0.5 text-xs font-semibold text-[#002B49] transition-all hover:bg-zinc-100 active:scale-95"
+              class="hover:bg-zinc-150 rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-[#2e1065] shadow-sm transition-all active:scale-95"
             >
               {{ isCopied ? 'คัดลอกแล้ว' : 'คัดลอก' }}
             </button>
@@ -109,19 +109,19 @@ function copyPromptPayId() {
         </div>
 
         <!-- QR Code Frame with PromptPay Branding -->
-        <div class="relative flex flex-col items-center rounded-2xl border border-zinc-200/60 bg-zinc-50 p-4 shadow-inner dark:border-zinc-700/50 dark:bg-zinc-800/50">
+        <div class="border-[var(--accent-gold)]/30 relative flex flex-col items-center rounded-2xl border bg-zinc-50/50 p-4 shadow-sm dark:bg-zinc-900/30">
           <div class="mb-3 flex w-full justify-center">
             <!-- Dynamic PromptPay Logo Header -->
-            <div class="flex items-center gap-1 rounded-full bg-[#002B49] px-4 py-1.5 text-xs font-bold text-white shadow-sm">
-              <span class="text-yellow-400">พร้อมเพย์</span> PromptPay
+            <div class="border-[var(--accent-gold)]/30 flex items-center gap-1 rounded-full border bg-[#2e1065] px-4 py-1.5 text-xs font-bold text-white shadow-md">
+              <span class="text-[var(--accent-gold)]">พร้อมเพย์</span> PromptPay
             </div>
           </div>
           
-          <div class="rounded-xl bg-white p-2 shadow-md">
+          <div class="rounded-xl border border-zinc-100 bg-white p-2.5 shadow-md">
             <StyledQRCode v-bind="qrOptions" />
           </div>
 
-          <div class="mt-3 max-w-[240px] text-center text-xs text-zinc-500 dark:text-zinc-400">
+          <div class="mt-3.5 max-w-[240px] text-center text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
             สแกนด้วยแอปพลิเคชันธนาคารเพื่อโอนเงินสนับสนุน
           </div>
         </div>

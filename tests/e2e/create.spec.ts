@@ -470,18 +470,17 @@ https://linkedin.com,LinkedIn,linkedin,`
       const nextBtn = navContainer.locator('button').last()
 
       // First row (index 0) has Poppins
-      await expect(page.getByText('Poppins')).toBeVisible()
+      await expect(page.locator('select')).toHaveValue("'Poppins', sans-serif")
 
       // Navigate to second row and verify Roboto
       await nextBtn.click()
       await expect(rowCounter).toHaveText('2 / 3')
-      await expect(page.getByText('Roboto')).toBeVisible()
+      await expect(page.locator('select')).toHaveValue("'Roboto', sans-serif")
 
-      // Navigate to third row — no font family, font family section should not be shown
+      // Navigate to third row — no font family, font family section should have default value
       await nextBtn.click()
       await expect(rowCounter).toHaveText('3 / 3')
-      await expect(page.getByText('Poppins')).not.toBeVisible()
-      await expect(page.getByText('Roboto')).not.toBeVisible()
+      await expect(page.locator('select')).toHaveValue("")
 
       fs.rmSync(tempCsvDir, { recursive: true, force: true })
     })

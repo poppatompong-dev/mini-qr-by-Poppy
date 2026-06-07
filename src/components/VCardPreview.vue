@@ -15,25 +15,25 @@ const address = [
 </script>
 <template>
   <div
-    class="mx-auto flex w-full flex-col gap-2 rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800 dark:shadow-lg md:max-w-xs"
+    class="border-[var(--accent-gold)]/30 mx-auto flex w-full flex-col gap-2.5 rounded-xl border bg-white p-6 shadow-md dark:bg-zinc-900/40 md:max-w-xs"
   >
-    <div class="mb-2">
-      <p class="truncate text-xl font-bold text-gray-800 dark:text-gray-100">
+    <div class="mb-2.5 border-b border-zinc-100 pb-2.5 dark:border-zinc-800">
+      <p class="truncate text-lg font-bold text-zinc-800 dark:text-zinc-100">
         {{ vCard.firstName }} {{ vCard.lastName }}
       </p>
-      <p v-if="vCard.position" class="truncate text-sm text-gray-600 dark:text-gray-300">
+      <p v-if="vCard.position" class="truncate text-xs font-semibold text-[var(--accent-gold)]">
         {{ vCard.position }}
       </p>
-      <p v-if="vCard.org" class="truncate text-sm text-gray-500 dark:text-gray-400">
+      <p v-if="vCard.org" class="truncate text-[11px] text-zinc-400 dark:text-zinc-500">
         {{ vCard.org }}
       </p>
     </div>
     <div
       v-if="vCard.email"
-      class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200"
+      class="text-zinc-650 dark:text-zinc-350 flex items-center gap-2 text-xs"
     >
       <svg
-        class="size-4 text-gray-400 dark:text-gray-500"
+        class="size-4 text-[var(--primary)] dark:text-[var(--accent-gold)]"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -41,14 +41,14 @@ const address = [
       >
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4V4zm0 0l8 8 8-8" />
       </svg>
-      <span>{{ vCard.email }}</span>
+      <span class="truncate">{{ vCard.email }}</span>
     </div>
     <div
       v-if="vCard.phonework"
-      class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200"
+      class="text-zinc-650 dark:text-zinc-350 flex items-center gap-2 text-xs"
     >
       <svg
-        class="size-4 text-gray-400 dark:text-gray-500"
+        class="size-4 text-[var(--primary)] dark:text-[var(--accent-gold)]"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -64,10 +64,10 @@ const address = [
     </div>
     <div
       v-if="vCard.website"
-      class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200"
+      class="text-zinc-650 dark:text-zinc-350 flex items-center gap-2 text-xs"
     >
       <svg
-        class="size-4 text-gray-400 dark:text-gray-500"
+        class="size-4 text-[var(--primary)] dark:text-[var(--accent-gold)]"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -79,14 +79,14 @@ const address = [
         ><a
           :href="vCard.website"
           target="_blank"
-          class="text-blue-600 hover:underline dark:text-blue-400"
+          class="font-medium text-[var(--primary)] hover:underline dark:text-[var(--accent-gold)]"
           >{{ vCard.website }}</a
         ></span
       >
     </div>
-    <div v-if="address" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+    <div v-if="address" class="text-zinc-650 dark:text-zinc-350 flex items-center gap-2 text-xs">
       <svg
-        class="size-4 text-gray-400 dark:text-gray-500"
+        class="size-4 text-[var(--primary)] dark:text-[var(--accent-gold)]"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
@@ -98,7 +98,7 @@ const address = [
           d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
         />
       </svg>
-      <span>{{ address }}</span>
+      <span class="break-words leading-relaxed">{{ address }}</span>
     </div>
   </div>
 </template>
