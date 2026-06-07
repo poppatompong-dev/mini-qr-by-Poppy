@@ -39,7 +39,9 @@ import {
   File as FileIcon,
   Plus,
   X,
-  Edit3
+  Edit3,
+  CheckCircle,
+  Copy
 } from 'lucide-vue-next'
 
 const props = defineProps<{

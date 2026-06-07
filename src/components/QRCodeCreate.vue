@@ -57,6 +57,7 @@ import {
   type QRCodeFrameConfig
 } from '@/utils/useQRCodeStorage'
 import { useMediaQuery } from '@vueuse/core'
+import { UploadCloud } from 'lucide-vue-next'
 import JSZip from 'jszip'
 import TextExportModal from '@/components/TextExportModal.vue'
 import {
