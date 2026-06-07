@@ -351,8 +351,9 @@ function parsePresetsFromEnv(envVal?: string): Preset[] | undefined {
 const envPresets = parsePresetsFromEnv(import.meta.env.VITE_QR_CODE_PRESETS)
 export const allQrCodePresets: Preset[] = envPresets ?? builtInPresets
 
-export const defaultPreset: Preset = import.meta.env.VITE_DEFAULT_PRESET
-  ? (allQrCodePresets.find((p) => p.name === import.meta.env.VITE_DEFAULT_PRESET) ??
+const defaultPresetName = import.meta.env.VITE_DEFAULT_PRESET
+export const defaultPreset: Preset = defaultPresetName
+  ? (allQrCodePresets.find((p) => p.name.toLowerCase() === defaultPresetName.toLowerCase()) ??
     allQrCodePresets[0])
   : allQrCodePresets[0]
 

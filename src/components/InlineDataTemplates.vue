@@ -1123,18 +1123,21 @@ const categories = [
                 >
                   <div class="flex items-center gap-2 text-xs">
                     <!-- File type preview/icon -->
-                    <div class="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200/60 bg-white dark:border-zinc-800/60 dark:bg-zinc-950">
+                    <div class="relative flex size-8 shrink-0 select-none items-center justify-center overflow-hidden rounded-lg border border-zinc-200/60 bg-zinc-50 dark:border-zinc-800/60 dark:bg-zinc-950">
                       <img 
                         v-if="item.previewUrl" 
                         :src="item.previewUrl" 
                         class="size-full object-cover" 
                         alt="preview"
                       />
-                      <component 
-                        v-else 
-                        :is="getFileTypeMeta(item.name).icon" 
-                        class="size-4.5 text-zinc-500" 
-                      />
+                      <!-- Beautiful mock document thumbnail for non-image files -->
+                      <div v-else :class="`flex flex-col items-center justify-center size-full font-mono leading-none ${getFileTypeMeta(item.name).color}`">
+                        <component 
+                          :is="getFileTypeMeta(item.name).icon" 
+                          class="mb-0.5 size-3.5 opacity-90" 
+                        />
+                        <span class="text-[7px] font-bold uppercase tracking-tight">{{ getFileTypeMeta(item.name).label }}</span>
+                      </div>
                     </div>
 
                     <!-- File name field -->

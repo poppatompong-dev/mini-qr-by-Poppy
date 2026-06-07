@@ -57,7 +57,20 @@ import {
   type QRCodeFrameConfig
 } from '@/utils/useQRCodeStorage'
 import { useMediaQuery } from '@vueuse/core'
-import { UploadCloud } from 'lucide-vue-next'
+import {
+  UploadCloud,
+  Globe,
+  Type,
+  Wifi,
+  FileArchive,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  MessageSquare,
+  Info
+} from 'lucide-vue-next'
 import JSZip from 'jszip'
 import TextExportModal from '@/components/TextExportModal.vue'
 import {
@@ -1162,6 +1175,187 @@ watch(
   { deep: true }
 )
 
+const decodedDataMeta = computed(() => {
+  const raw = data.value || ''
+  if (!raw) {
+    return {
+      type: 'empty',
+      title: t('ไม่มีข้อมูล') || 'ไม่มีข้อมูล',
+      details: [],
+      icon: Info,
+      color: 'border-zinc-200/50 bg-zinc-50/20 text-zinc-500'
+    }
+  }
+
+  // 1. WiFi
+  if (raw.startsWith('WIFI:')) {
+    const ssidMatch = /S:([^;]+)/.exec(raw)
+    const passMatch = /P:([^;]+)/.exec(raw)
+    const typeMatch = /T:([^;]+)/.exec(raw)
+    const ssid = ssidMatch ? ssidMatch[1] : 'Unknown'
+    const pass = passMatch ? passMatch[1] : ''
+    const enc = typeMatch ? typeMatch[1] : 'WPA'
+    return {
+      type: 'wifi',
+      title: t('เครือข่าย Wi-Fi') || 'เครือข่าย Wi-Fi',
+      details: [
+        { label: t('SSID / ชื่อเครือข่าย') || 'SSID / ชื่อเครือข่าย', value: ssid },
+        { label: t('ระบบความปลอดภัย') || 'ระบบความปลอดภัย', value: enc },
+        { label: t('รหัสผ่าน') || 'รหัสผ่าน', value: pass ? '••••••••' : t('ไม่มีรหัสผ่าน') || 'ไม่มีรหัสผ่าน' }
+      ],
+      icon: Wifi,
+      color: 'border-emerald-200/50 bg-emerald-50/10 text-emerald-600 dark:border-emerald-900/30 dark:bg-emerald-950/5'
+    }
+  }
+
+  // 2. Email
+  if (raw.startsWith('mailto:') || raw.startsWith('MATMSG:')) {
+    let to = ''
+    let sub = ''
+    if (raw.startsWith('mailto:')) {
+      to = raw.slice(7).split('?')[0] || ''
+      const subMatch = /subject=([^&]+)/.exec(raw)
+      sub = subMatch ? decodeURIComponent(subMatch[1]) : ''
+    } else {
+      const toMatch = /TO:([^;]+)/.exec(raw)
+      const subMatch = /SUB:([^;]+)/.exec(raw)
+      to = toMatch ? toMatch[1] : ''
+      sub = subMatch ? subMatch[1] : ''
+    }
+    return {
+      type: 'email',
+      title: t('ส่งอีเมล') || 'ส่งอีเมล',
+      details: [
+        { label: t('ถึง (Email)') || 'ถึง (Email)', value: to },
+        { label: t('หัวข้อ') || 'หัวข้อ', value: sub || t('ไม่มีหัวข้อ') || 'ไม่มีหัวข้อ' }
+      ],
+      icon: Mail,
+      color: 'border-cyan-200/50 bg-cyan-50/10 text-cyan-600 dark:border-cyan-900/30 dark:bg-cyan-950/5'
+    }
+  }
+
+  // 3. Contact Card (vCard)
+  if (raw.startsWith('BEGIN:VCARD')) {
+    const fnMatch = /FN:([^\n]+)/.exec(raw)
+    const telMatch = /TEL:([^\n]+)/.exec(raw)
+    const emailMatch = /EMAIL:([^\n]+)/.exec(raw)
+    const name = fnMatch ? fnMatch[1].trim() : 'Contact'
+    const phone = telMatch ? telMatch[1].trim() : ''
+    const email = emailMatch ? emailMatch[1].trim() : ''
+    return {
+      type: 'vcard',
+      title: t('บัตรติดต่อ (vCard)') || 'บัตรติดต่อ (vCard)',
+      details: [
+        { label: t('ชื่อ-นามสกุล') || 'ชื่อ-นามสกุล', value: name },
+        { label: t('เบอร์โทรศัพท์') || 'เบอร์โทรศัพท์', value: phone || '-' },
+        { label: t('อีเมล') || 'อีเมล', value: email || '-' }
+      ],
+      icon: User,
+      color: 'border-indigo-200/50 bg-indigo-50/10 text-indigo-600 dark:border-indigo-900/30 dark:bg-indigo-950/5'
+    }
+  }
+
+  // 4. Phone
+  if (raw.startsWith('tel:')) {
+    const num = raw.slice(4)
+    return {
+      type: 'phone',
+      title: t('โทรออก') || 'โทรออก',
+      details: [
+        { label: t('เบอร์โทรศัพท์') || 'เบอร์โทรศัพท์', value: num }
+      ],
+      icon: Phone,
+      color: 'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
+    }
+  }
+
+  // 5. SMS
+  if (raw.startsWith('sms:') || raw.startsWith('smsto:')) {
+    const parts = raw.split(':')
+    const phone = parts[1] || ''
+    const body = parts[2] ? decodeURIComponent(parts[2]) : ''
+    return {
+      type: 'sms',
+      title: t('ส่งข้อความ SMS') || 'ส่งข้อความ SMS',
+      details: [
+        { label: t('เบอร์ปลายทาง') || 'เบอร์ปลายทาง', value: phone },
+        { label: t('ข้อความ') || 'ข้อความ', value: body || '-' }
+      ],
+      icon: MessageSquare,
+      color: 'border-violet-200/50 bg-violet-50/10 text-violet-600 dark:border-violet-900/30 dark:bg-violet-950/5'
+    }
+  }
+
+  // 6. Location
+  if (raw.startsWith('geo:')) {
+    const coords = raw.slice(4).split('?')[0]
+    return {
+      type: 'location',
+      title: t('พิกัดแผนที่ (Location)') || 'พิกัดแผนที่ (Location)',
+      details: [
+        { label: t('ละติจูด, ลองจิจูด') || 'ละติจูด, ลองจิจูด', value: coords }
+      ],
+      icon: MapPin,
+      color: 'border-rose-200/50 bg-rose-50/10 text-rose-600 dark:border-rose-900/30 dark:bg-rose-950/5'
+    }
+  }
+
+  // 7. Event (Calendar)
+  if (raw.startsWith('BEGIN:VEVENT')) {
+    const summaryMatch = /SUMMARY:([^\n]+)/.exec(raw)
+    const locMatch = /LOCATION:([^\n]+)/.exec(raw)
+    const title = summaryMatch ? summaryMatch[1].trim() : 'Event'
+    const location = locMatch ? locMatch[1].trim() : ''
+    return {
+      type: 'event',
+      title: t('กิจกรรม (Calendar)') || 'กิจกรรม (Calendar)',
+      details: [
+        { label: t('หัวข้อกิจกรรม') || 'หัวข้อกิจกรรม', value: title },
+        { label: t('สถานที่') || 'สถานที่', value: location || '-' }
+      ],
+      icon: Calendar,
+      color: 'border-orange-200/50 bg-orange-50/10 text-orange-600 dark:border-orange-900/30 dark:bg-orange-950/5'
+    }
+  }
+
+  // 8. URL (including Shared Files Link)
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    // Check if it is a shared file link
+    if (raw.includes('?id=')) {
+      return {
+        type: 'files',
+        title: t('ไฟล์แชร์สาธารณะ (ZIP)') || 'ไฟล์แชร์สาธารณะ (ZIP)',
+        details: [
+          { label: t('สถานะ') || 'สถานะ', value: t('พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด') || 'พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด' },
+          { label: t('ลิงก์เข้าถึง') || 'ลิงก์เข้าถึง', value: raw }
+        ],
+        icon: FileArchive,
+        color: 'border-amber-200/50 bg-amber-50/10 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/5'
+      }
+    }
+    return {
+      type: 'url',
+      title: t('ลิงก์เว็บไซต์ (URL)') || 'ลิงก์เว็บไซต์ (URL)',
+      details: [
+        { label: t('ที่อยู่เว็บ') || 'ที่อยู่เว็บ', value: raw }
+      ],
+      icon: Globe,
+      color: 'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
+    }
+  }
+
+  // 9. Plain Text
+  return {
+    type: 'text',
+    title: t('ข้อความทั่วไป (Plain Text)') || 'ข้อความทั่วไป (Plain Text)',
+    details: [
+      { label: t('ข้อมูลข้อความ') || 'ข้อมูลข้อความ', value: raw.length > 50 ? raw.slice(0, 50) + '...' : raw }
+    ],
+    icon: Type,
+    color: 'border-zinc-200/50 bg-zinc-50/10 text-zinc-600 dark:border-zinc-800/60 dark:bg-zinc-900/10'
+  }
+})
+
 const onFilenameKeypress = (event: KeyboardEvent) => {
   const invalidChars = /[\\/:*?"<>|]/
   if (invalidChars.test(event.key)) {
@@ -1303,62 +1497,89 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <!-- Step 1 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
             <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               1
             </div>
-            <div class="space-y-0.5">
+            <div class="min-w-0 flex-1 space-y-0.5">
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('1. Select Data Type') }}
               </h4>
-              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {{ t('Select your preferred content type (Text, Link, Wi-Fi, Files, etc.)') }}
               </p>
+              <!-- Animation block -->
+              <div class="mt-2 flex items-center justify-start gap-1.5">
+                <div class="animate-pulse-slow size-3 rounded border border-blue-500 bg-blue-500/10"></div>
+                <div class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"></div>
+                <div class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"></div>
+              </div>
             </div>
           </div>
 
           <!-- Step 2 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
             <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               2
             </div>
-            <div class="space-y-0.5">
+            <div class="min-w-0 flex-1 space-y-0.5">
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('2. Enter Details') }}
               </h4>
-              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {{ t('Fill out the fields in the form to populate your QR Code data.') }}
               </p>
+              <!-- Animation block -->
+              <div class="h-4.5 mt-2 flex w-24 items-center gap-1 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-950/40">
+                <span class="scale-[0.9] font-mono text-[8px] text-zinc-400">https://</span>
+                <span class="animate-blink h-2.5 w-0.5 bg-blue-500"></span>
+              </div>
             </div>
           </div>
 
           <!-- Step 3 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
             <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               3
             </div>
-            <div class="space-y-0.5">
+            <div class="min-w-0 flex-1 space-y-0.5">
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('3. Customize Design') }}
               </h4>
-              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {{ t('Choose presets, colors, dots style, or embed your center logo.') }}
               </p>
+              <!-- Animation block -->
+              <div class="mt-2 flex items-center justify-start gap-1.5">
+                <span class="animate-pulse-slow size-2.5 rounded-full bg-rose-500" style="animation-duration: 1.5s;"></span>
+                <span class="animate-pulse-slow size-2.5 rounded-full bg-emerald-500" style="animation-duration: 2s;"></span>
+                <span class="animate-pulse-slow size-2.5 rounded-full bg-blue-500" style="animation-duration: 2.5s;"></span>
+              </div>
             </div>
           </div>
 
           <!-- Step 4 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/30">
+          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
             <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
               4
             </div>
-            <div class="space-y-0.5">
+            <div class="min-w-0 flex-1 space-y-0.5">
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('4. Export QR Code') }}
               </h4>
-              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
+              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {{ t('Download your high-resolution QR Code in PNG, JPG, or SVG format.') }}
               </p>
+              <!-- Animation block -->
+              <div class="mt-2 flex items-center gap-1">
+                <div class="h-4.5 flex items-center justify-center rounded border border-blue-500/30 bg-blue-50 px-1.5 py-0.5 dark:bg-blue-950/20">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="animate-slide-down text-blue-600 dark:text-blue-400">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                  <span class="ml-1 text-[8px] font-bold text-blue-600 dark:text-blue-400">PNG</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2378,6 +2599,33 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </div>
         </div>
 
+        <!-- Data Content Preview Thumbnail -->
+        <div
+          v-if="data && data.trim().length > 0 && exportMode !== ExportMode.Batch"
+          class="mb-4 flex w-full gap-3 rounded-xl border p-3 text-start text-xs transition-all"
+          :class="decodedDataMeta.color"
+        >
+          <!-- Icon Frame -->
+          <div class="dark:text-zinc-350 flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/40 bg-white text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <component :is="decodedDataMeta.icon" class="size-4.5" />
+          </div>
+          <!-- Details -->
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <h4 class="text-zinc-850 flex items-center gap-1.5 font-bold dark:text-zinc-100">
+              <span>{{ decodedDataMeta.title }}</span>
+              <span class="rounded border border-zinc-200/40 bg-white/70 px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/80">
+                {{ decodedDataMeta.type }}
+              </span>
+            </h4>
+            <div class="space-y-0.5 text-[10px] leading-relaxed">
+              <div v-for="(detail, index) in decodedDataMeta.details" :key="index" class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
+                <span class="shrink-0 font-medium text-zinc-400">{{ detail.label }}:</span>
+                <span class="truncate font-semibold text-zinc-700 dark:text-zinc-300" :title="detail.value">{{ detail.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Export Actions Grid -->
         <div class="w-full select-none space-y-3">
           <div class="grid grid-cols-2 gap-2">
@@ -2510,3 +2758,27 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
     />
   </div>
 </template>
+
+<style scoped>
+@keyframes blink {
+  50% { opacity: 0; }
+}
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+@keyframes slide-down {
+  0% { transform: translateY(-3px); opacity: 0.3; }
+  50% { transform: translateY(2px); opacity: 1; }
+  100% { transform: translateY(-3px); opacity: 0.3; }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+.animate-slide-down {
+  animation: slide-down 1.6s ease-in-out infinite;
+}
+</style>
