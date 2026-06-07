@@ -1296,7 +1296,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-750 dark:text-zinc-250">
+          <h3 class="text-zinc-750 dark:text-zinc-250 text-xs font-bold uppercase tracking-wider">
             {{ t('User Guide') }}
           </h3>
         </div>
@@ -1311,7 +1311,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('1. Select Data Type') }}
               </h4>
-              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
                 {{ t('Select your preferred content type (Text, Link, Wi-Fi, Files, etc.)') }}
               </p>
             </div>
@@ -1326,7 +1326,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('2. Enter Details') }}
               </h4>
-              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
                 {{ t('Fill out the fields in the form to populate your QR Code data.') }}
               </p>
             </div>
@@ -1341,7 +1341,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('3. Customize Design') }}
               </h4>
-              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
                 {{ t('Choose presets, colors, dots style, or embed your center logo.') }}
               </p>
             </div>
@@ -1356,7 +1356,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                 {{ t('4. Export QR Code') }}
               </h4>
-              <p class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-455">
+              <p class="dark:text-zinc-455 text-[10px] leading-relaxed text-zinc-500">
                 {{ t('Download your high-resolution QR Code in PNG, JPG, or SVG format.') }}
               </p>
             </div>
@@ -1426,7 +1426,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             <BatchExportFieldsGuide />
             <button
               type="button"
-              class="upload-dropzone-pulse duration-350 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20 w-full"
+              class="upload-dropzone-pulse duration-350 flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20"
               :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
               @click="fileInput?.click()"
               @keyup.enter="fileInput?.click()"
@@ -1970,7 +1970,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       />
                       <span
                         :class="[
-                          'block text-center rounded-lg border py-1.5 text-[11px] font-bold capitalize outline-none transition-all',
+                          'block rounded-lg border py-1.5 text-center text-[11px] font-bold capitalize outline-none transition-all',
                           frameTextPosition === position
                             ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:border-blue-500 dark:text-blue-400'
                             : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900'

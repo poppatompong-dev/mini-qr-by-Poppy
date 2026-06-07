@@ -17,7 +17,6 @@ import {
   File as FileIcon,
   AlertCircle,
   Loader2,
-  CheckCircle,
   Layers,
   Sparkles
 } from 'lucide-vue-next'

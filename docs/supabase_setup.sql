@@ -29,6 +29,12 @@ CREATE POLICY "Allow public delete" ON public.qr_files_log
     FOR DELETE TO anon
     USING (true);
 
+-- Allow anyone to update logs (used when admin edits/renames zip file names)
+CREATE POLICY "Allow public update" ON public.qr_files_log
+    FOR UPDATE TO anon
+    USING (true)
+    WITH CHECK (true);
+
 -- 4. Storage Bucket Setup (qr-files)
 -- Instruction: Run this in Supabase SQL editor to configure policies for the 'qr-files' storage bucket.
 -- Ensure the bucket exists. You can create it in the Supabase Storage UI named 'qr-files' as a Public bucket,

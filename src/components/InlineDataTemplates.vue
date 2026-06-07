@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import {
   detectDataType,
@@ -107,7 +106,6 @@ interface UploadableFile {
 }
 const filesToUpload = ref<UploadableFile[]>([])
 const uploading = ref(false)
-const uploadProgress = ref('')
 const uploadError = ref('')
 const filesInputRef = ref<HTMLInputElement | null>(null)
 
