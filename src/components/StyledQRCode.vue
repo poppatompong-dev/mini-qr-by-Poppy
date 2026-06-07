@@ -64,7 +64,7 @@ onMounted(() => {
 })
 
 watch(
-  () => props,
+  props,
   () => {
     if (!instance) return
     instance.update(adaptedConfig())
