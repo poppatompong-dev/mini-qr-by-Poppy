@@ -297,9 +297,39 @@ const currentPreviewType = computed(() => {
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio'
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
   if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css'].includes(ext)) return 'text'
-  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) return 'document'
+  if (ext === 'pdf') return 'pdf'
   return 'other'
 })
+
+// Blob Preview State (for secure/offline loading of PDFs and Images)
+const previewBlobUrl = ref('')
+const previewLoading = ref(false)
+const previewError = ref(false)
+
+const loadPreviewBlob = async (filename: string) => {
+  previewLoading.value = true
+  previewError.value = false
+  if (previewBlobUrl.value) {
+    URL.revokeObjectURL(previewBlobUrl.value)
+    previewBlobUrl.value = ''
+  }
+  try {
+    const storageName = storageMap.value[filename] || filename
+    const { data, error: dlError } = await supabase.storage
+      .from('qr-files')
+      .download(`${props.shareId}/${storageName}`)
+
+    if (dlError) throw dlError
+    if (data) {
+      previewBlobUrl.value = URL.createObjectURL(data)
+    }
+  } catch (err) {
+    console.error('Failed to load preview blob:', err)
+    previewError.value = true
+  } finally {
+    previewLoading.value = false
+  }
+}
 
 const loadTextContent = async (url: string) => {
   textFileLoading.value = true
@@ -317,8 +347,13 @@ const loadTextContent = async (url: string) => {
 }
 
 watch([currentPreviewIndex, isPreviewOpen], async () => {
-  if (isPreviewOpen.value && currentPreviewType.value === 'text' && currentPreviewUrl.value) {
-    await loadTextContent(currentPreviewUrl.value)
+  if (isPreviewOpen.value) {
+    const type = currentPreviewType.value
+    if (type === 'text' && currentPreviewUrl.value) {
+      await loadTextContent(currentPreviewUrl.value)
+    } else if (type === 'image' || type === 'pdf') {
+      await loadPreviewBlob(currentPreviewFilename.value)
+    }
   }
 })
 
@@ -351,6 +386,10 @@ const prevPreview = () => {
 
 const closePreview = () => {
   isPreviewOpen.value = false
+  if (previewBlobUrl.value) {
+    URL.revokeObjectURL(previewBlobUrl.value)
+    previewBlobUrl.value = ''
+  }
 }
 
 onMounted(() => {
@@ -582,8 +621,17 @@ onMounted(() => {
         <div class="border-zinc-150/40 my-4 flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-xl border bg-zinc-50/50 py-5 dark:border-zinc-800/40 dark:bg-zinc-950/20">
           <!-- Image Preview -->
           <div v-if="currentPreviewType === 'image'" class="flex max-h-full max-w-full items-center justify-center p-2">
+            <div v-if="previewLoading" class="flex flex-col items-center justify-center py-20">
+              <Loader2 class="size-8 animate-spin text-blue-600 dark:text-blue-400" />
+              <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{{ t('กำลังโหลดรูปภาพ...') || 'กำลังโหลดรูปภาพ...' }}</p>
+            </div>
+            <div v-else-if="previewError" class="flex flex-col items-center justify-center py-10 text-center text-red-500">
+              <AlertCircle class="mb-2 size-8" />
+              <p class="text-xs font-bold">{{ t('ไม่สามารถโหลดรูปภาพนี้ได้') || 'ไม่สามารถโหลดรูปภาพนี้ได้' }}</p>
+            </div>
             <img
-              :src="currentPreviewUrl"
+              v-else
+              :src="previewBlobUrl"
               :alt="currentPreviewFilename"
               class="max-h-[50vh] max-w-full rounded-lg object-contain shadow-md"
             />
@@ -619,20 +667,29 @@ onMounted(() => {
             <pre v-else class="h-full max-h-[50vh] select-text overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-white p-3.5 text-left font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">{{ textFileContent }}</pre>
           </div>
 
-          <!-- Document Preview (PDF, Word, Excel, PowerPoint) -->
-          <div v-else-if="currentPreviewType === 'document'" class="flex size-full flex-col items-center justify-center p-2">
+          <!-- PDF Preview -->
+          <div v-else-if="currentPreviewType === 'pdf'" class="flex size-full flex-col items-center justify-center p-2">
+            <div v-if="previewLoading" class="flex flex-col items-center justify-center py-20">
+              <Loader2 class="size-8 animate-spin text-blue-600 dark:text-blue-400" />
+              <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{{ t('กำลังโหลดเอกสาร PDF...') || 'กำลังโหลดเอกสาร PDF...' }}</p>
+            </div>
+            <div v-else-if="previewError" class="flex flex-col items-center justify-center py-10 text-center text-red-500">
+              <AlertCircle class="mb-2 size-8" />
+              <p class="text-xs font-bold">{{ t('ไม่สามารถโหลดเอกสาร PDF นี้ได้') || 'ไม่สามารถโหลดเอกสาร PDF นี้ได้' }}</p>
+            </div>
             <iframe
-              :src="`https://docs.google.com/gview?url=${encodeURIComponent(currentPreviewUrl)}&embedded=true`"
+              v-else
+              :src="previewBlobUrl"
               class="h-[50vh] w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
             ></iframe>
           </div>
 
           <!-- Other Files Preview -->
           <div v-else class="w-full max-w-sm p-6 text-center">
-            <div class="bg-zinc-150 dark:bg-zinc-850 text-zinc-650 dark:text-zinc-450 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
+            <div :class="`mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl border ${getFileTypeMeta(currentPreviewFilename).color}`">
               <component
                 :is="getFileTypeMeta(currentPreviewFilename).icon"
-                class="size-7"
+                class="size-8"
               />
             </div>
             <h4 class="mb-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">{{ currentPreviewFilename }}</h4>
