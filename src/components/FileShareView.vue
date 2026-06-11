@@ -309,7 +309,7 @@ const loadTextContent = async (url: string) => {
     const res = await fetch(url)
     if (!res.ok) throw new Error()
     textFileContent.value = await res.text()
-  } catch (e) {
+  } catch {
     textFileError.value = true
   } finally {
     textFileLoading.value = false
@@ -359,7 +359,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-2xl px-4 py-8 text-start">
+  <div class="mx-auto w-full max-w-2xl px-0 py-6 text-start md:px-4 md:py-8">
     
     <!-- Title Area -->
     <div class="mb-6 flex flex-col gap-2">
@@ -408,10 +408,10 @@ onMounted(() => {
     <div v-else-if="shareData" class="space-y-6">
       
       <!-- Main Card -->
-      <div class="glass-card space-y-6 p-5 md:p-6">
+      <div class="glass-card space-y-6 p-3 sm:p-5 md:p-6">
         
         <!-- Archive Summary Info -->
-        <div class="flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-50/40 p-4 dark:border-zinc-800/60 dark:bg-zinc-900/10">
+        <div class="flex flex-col gap-3 rounded-2xl border border-zinc-200/60 bg-zinc-50/40 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/10 md:p-4">
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
               <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
@@ -446,14 +446,14 @@ onMounted(() => {
               v-for="filename in shareData.files_list"
               :key="filename"
               @click="openPreview(filename)"
-              class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-zinc-200/60 bg-white p-3.5 transition-all duration-300 hover:scale-[1.005] hover:border-blue-300 hover:bg-blue-50/5 hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:hover:border-blue-800/60 dark:hover:bg-zinc-900/40"
+              class="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200/60 bg-white p-2 transition-all duration-300 hover:scale-[1.005] hover:border-blue-300 hover:bg-blue-50/5 hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:hover:border-blue-800/60 dark:hover:bg-zinc-900/40 sm:p-3 md:p-3.5"
             >
               <!-- Left: Icon & Name -->
-              <div class="flex min-w-0 flex-1 items-center gap-3">
-                <div class="dark:border-zinc-850 flex size-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200/60 bg-zinc-50/50 dark:bg-zinc-950">
+              <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                <div class="dark:border-zinc-850 flex size-8 shrink-0 items-center justify-center rounded-xl border border-zinc-200/60 bg-zinc-50/50 dark:bg-zinc-950 sm:size-9">
                   <component
                     :is="getFileTypeMeta(filename).icon"
-                    class="size-4.5 text-zinc-500 dark:text-zinc-400"
+                    class="sm:size-4.5 size-4 text-zinc-500 dark:text-zinc-400"
                   />
                 </div>
                 <div class="min-w-0 flex-1">
@@ -472,10 +472,10 @@ onMounted(() => {
               </div>
 
               <!-- Right: Actions (View & Download) -->
-              <div class="flex shrink-0 items-center gap-2">
+              <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <button
                   @click.stop="openPreview(filename)"
-                  class="text-zinc-650 dark:hover:text-blue-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs font-bold transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/40"
+                  class="text-zinc-650 dark:hover:text-blue-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-2 text-xs font-bold transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/40 sm:px-3 sm:py-2"
                   :title="t('ดูตัวอย่างไฟล์') || 'ดูตัวอย่างไฟล์'"
                 >
                   <Eye class="size-3.5" />
@@ -483,7 +483,7 @@ onMounted(() => {
                 </button>
                 <button
                   @click.stop="handleDownloadSingle(filename)"
-                  class="text-zinc-650 dark:hover:text-emerald-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs font-bold transition-all hover:border-emerald-200 hover:bg-emerald-50/40 hover:text-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/40"
+                  class="text-zinc-650 dark:hover:text-emerald-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-2 text-xs font-bold transition-all hover:border-emerald-200 hover:bg-emerald-50/40 hover:text-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/40 sm:px-3 sm:py-2"
                   :title="t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์'"
                 >
                   <Download class="size-3.5" />
@@ -516,7 +516,7 @@ onMounted(() => {
           <button
             v-else
             @click="handleDownloadAllZip"
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-bold text-white shadow-md shadow-blue-500/10 transition hover:bg-blue-700 active:scale-[0.99]"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/10 transition hover:bg-blue-700 active:scale-[0.99] sm:text-sm"
           >
             <FileArchive class="size-4.5" />
             <span>{{ t('ดาวน์โหลดไฟล์ทั้งหมด (ZIP)') || 'ดาวน์โหลดไฟล์ทั้งหมด (ZIP)' }}</span>

@@ -215,15 +215,15 @@ const isModeToggleDisabled = computed(() => {
 
     <!-- Mobile sticky header - only visible on mobile -->
     <div
-      class="scroll-header-container fixed inset-x-0 top-0 z-50 px-4 pt-4 md:hidden"
+      class="scroll-header-container fixed inset-x-0 top-0 z-50 px-2 pt-3 md:hidden"
       :class="{ 'header-collapsed': isHeaderCollapsed }"
     >
       <div class="flex justify-center">
         <div
-          class="duration-350 relative flex items-center gap-2 rounded-xl border border-[var(--border-zinc)] bg-white/95 p-1 pr-2 shadow-lg backdrop-blur-md transition-all dark:bg-zinc-900/95"
+          class="duration-350 relative flex items-center gap-1.5 rounded-xl border border-[var(--border-zinc)] bg-white/95 p-1 pr-2 shadow-lg backdrop-blur-md transition-all dark:bg-zinc-900/95"
         >
           <!-- Switcher buttons container with sliding pill -->
-          <div class="relative flex w-[160px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40">
+          <div class="relative flex w-[146px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40">
             <div
               class="duration-350 border-[var(--accent-gold)]/20 absolute inset-y-0.5 rounded-[6px] border bg-[var(--primary)] shadow-sm transition-all"
               :style="{
@@ -282,16 +282,6 @@ const isModeToggleDisabled = computed(() => {
             </svg>
           </button>
 
-          <!-- Mobile Admin Settings Button -->
-          <button
-            class="grid size-7 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 shadow-sm outline-none transition-all duration-300 active:scale-[0.95] dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-400"
-            @click="isAdminHistoryOpen = true"
-            :title="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
-            :aria-label="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
-          >
-            <Key class="size-3.5" />
-          </button>
-
           <!-- Divider line -->
           <span class="h-5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
 
@@ -308,7 +298,7 @@ const isModeToggleDisabled = computed(() => {
 
     <!-- Main Container -->
     <div
-      class="grid w-full flex-1 place-items-center items-start bg-transparent p-6 pb-20 pt-24 md:p-8"
+      class="grid w-full flex-1 place-items-center items-start bg-transparent px-3 py-6 pb-20 pt-24 md:p-8"
     >
       <div class="w-full lg:w-5/6">
         <!-- 1. Luxury Hero Section (Visible in Create and Scan Modes) -->
