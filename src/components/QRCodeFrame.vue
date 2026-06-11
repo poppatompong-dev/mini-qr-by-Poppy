@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface FrameStyle {
   textColor?: string
   backgroundColor?: string
@@ -23,9 +25,15 @@ interface Props {
   textColorBottom?: string
   fontSizeTop?: number
   fontSizeBottom?: number
+  fontWeightTop?: string
+  fontWeightBottom?: string
+  fontStyleTop?: string
+  fontStyleBottom?: string
+  fontFamilyTop?: string
+  fontFamilyBottom?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   textPosition: 'bottom',
   frameStyle: () => ({}),
   captionWidth: 200,
@@ -34,22 +42,36 @@ withDefaults(defineProps<Props>(), {
   textColorTop: '',
   textColorBottom: '',
   fontSizeTop: 18,
-  fontSizeBottom: 18
+  fontSizeBottom: 18,
+  fontWeightTop: 'normal',
+  fontWeightBottom: 'normal',
+  fontStyleTop: 'normal',
+  fontStyleBottom: 'normal',
+  fontFamilyTop: '',
+  fontFamilyBottom: ''
 })
 
 const PREVIEW_QRCODE_DIM_UNIT = 200
+
+const hasTop = computed(() => {
+  return !!(props.frameTextTop || (props.textPosition === 'top' && props.frameText))
+})
+
+const hasBottom = computed(() => {
+  return !!(props.frameTextBottom || (props.textPosition === 'bottom' && props.frameText))
+})
 </script>
 
 <template>
   <div
     :class="[
       'w-fit',
-      (frameTextTop || frameTextBottom)
+      (hasTop || hasBottom)
         ? 'flex-col'
         : (textPosition === 'left' || textPosition === 'right' ? 'flex-row' : 'flex-col'),
       {
-        'flex-row-reverse': !(frameTextTop || frameTextBottom) && textPosition === 'left',
-        'flex-col-reverse': !(frameTextTop || frameTextBottom) && textPosition === 'top'
+        'flex-row-reverse': !(hasTop || hasBottom) && textPosition === 'left',
+        'flex-col-reverse': !(hasTop || hasBottom) && textPosition === 'top'
       }
     ]"
     :style="{
@@ -72,23 +94,25 @@ const PREVIEW_QRCODE_DIM_UNIT = 200
   >
     <!-- Top Text if active -->
     <p
-      v-if="(frameTextTop || frameTextBottom) ? frameTextTop : (textPosition === 'top' && frameText)"
+      v-if="hasTop"
       :style="{
-        color: (frameTextTop || frameTextBottom) ? (textColorTop || frameStyle.textColor) : frameStyle.textColor,
-        fontFamily: frameStyle.fontFamily || undefined,
-        fontSize: (frameTextTop || frameTextBottom) ? `${fontSizeTop}px` : undefined,
+        color: frameTextTop ? (textColorTop || frameStyle.textColor) : frameStyle.textColor,
+        fontFamily: frameTextTop ? (fontFamilyTop || frameStyle.fontFamily || undefined) : (frameStyle.fontFamily || undefined),
+        fontSize: frameTextTop ? `${fontSizeTop}px` : undefined,
+        fontWeight: frameTextTop ? fontWeightTop : undefined,
+        fontStyle: frameTextTop ? fontStyleTop : undefined,
         margin: 0,
         textAlign: 'center',
         maxWidth: `${PREVIEW_QRCODE_DIM_UNIT}px`,
         whiteSpace: 'pre-line'
       }"
     >
-      {{ (frameTextTop || frameTextBottom) ? frameTextTop : frameText }}
+      {{ frameTextTop || frameText }}
     </p>
 
     <!-- Side Text if active (left/right only) -->
     <p
-      v-if="!(frameTextTop || frameTextBottom) && (textPosition === 'left' || textPosition === 'right')"
+      v-if="!(hasTop || hasBottom) && (textPosition === 'left' || textPosition === 'right')"
       :style="{
         color: frameStyle.textColor,
         fontFamily: frameStyle.fontFamily || undefined,
@@ -105,18 +129,20 @@ const PREVIEW_QRCODE_DIM_UNIT = 200
 
     <!-- Bottom Text if active -->
     <p
-      v-if="(frameTextTop || frameTextBottom) ? frameTextBottom : (textPosition === 'bottom' && frameText)"
+      v-if="hasBottom"
       :style="{
-        color: (frameTextTop || frameTextBottom) ? (textColorBottom || frameStyle.textColor) : frameStyle.textColor,
-        fontFamily: frameStyle.fontFamily || undefined,
-        fontSize: (frameTextTop || frameTextBottom) ? `${fontSizeBottom}px` : undefined,
+        color: frameTextBottom ? (textColorBottom || frameStyle.textColor) : frameStyle.textColor,
+        fontFamily: frameTextBottom ? (fontFamilyBottom || frameStyle.fontFamily || undefined) : (frameStyle.fontFamily || undefined),
+        fontSize: frameTextBottom ? `${fontSizeBottom}px` : undefined,
+        fontWeight: frameTextBottom ? fontWeightBottom : undefined,
+        fontStyle: frameTextBottom ? fontStyleBottom : undefined,
         margin: 0,
         textAlign: 'center',
         maxWidth: `${PREVIEW_QRCODE_DIM_UNIT}px`,
         whiteSpace: 'pre-line'
       }"
     >
-      {{ (frameTextTop || frameTextBottom) ? frameTextBottom : frameText }}
+      {{ frameTextBottom || frameText }}
     </p>
   </div>
 </template>

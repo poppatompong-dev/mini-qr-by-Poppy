@@ -100,11 +100,90 @@
   }
 }
  
-@layer custom {
+@layer components {
   * {
     @apply box-border;
   }
   body {
     @apply bg-background text-foreground;
   }
-}
+
+  /* Glassmorphism panel styling */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+  }
+  .dark .glass-card {
+    background: rgba(9, 9, 11, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 175, 55, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  /* Premium gold gradient button styling */
+  .btn-gold-gradient {
+    background-color: #d4af37 !important;
+    background-image: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #996515 100%) !important;
+    background-size: 200% auto !important;
+    transition: all 0.4s var(--ease-out-expo) !important;
+    box-shadow: 0 4px 15px 0 rgba(212, 175, 55, 0.2) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  }
+  .btn-gold-gradient:hover {
+    background-position: right center !important;
+    box-shadow: 0 8px 20px 0 rgba(212, 175, 55, 0.35) !important;
+    transform: translateY(-1px) !important;
+  }
+  .btn-gold-gradient:active {
+    transform: translateY(1px) !important;
+  }
+
+  /* Gold outline button */
+  .btn-gold-outline {
+    background: rgba(255, 255, 255, 0.45) !important;
+    border: 1px solid rgba(212, 175, 55, 0.55) !important;
+    transition: all 0.3s var(--ease-out-expo) !important;
+    color: #a67c1e !important;
+  }
+  .dark .btn-gold-outline {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    color: #d4af37 !important;
+  }
+  .btn-gold-outline:hover {
+    background: rgba(212, 175, 55, 0.08) !important;
+    border-color: rgba(212, 175, 55, 0.8) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  /* Gold text helper */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Custom ambient background mesh */
+  .ambient-luxury-mesh {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -10;
+    background-color: #fbfbfa;
+    background-image: 
+      radial-gradient(at 10% 20%, rgba(212, 175, 55, 0.06) 0px, transparent 50%),
+      radial-gradient(at 90% 10%, rgba(184, 134, 11, 0.05) 0px, transparent 50%),
+      radial-gradient(at 50% 80%, rgba(212, 175, 55, 0.04) 0px, transparent 50%);
+  }
+  .dark .ambient-luxury-mesh {
+    background-color: #09090b;
+    background-image: 
+      radial-gradient(at 10% 20%, rgba(212, 175, 55, 0.03) 0px, transparent 50%),
+      radial-gradient(at 90% 10%, rgba(184, 134, 11, 0.03) 0px, transparent 50%);
+  }
+}

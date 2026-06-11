@@ -666,7 +666,7 @@ const categories = [
 <template>
   <div class="w-full space-y-4">
     <!-- Categories Navigation Tab Bar -->
-    <div class="flex w-full flex-wrap gap-1.5 border-b border-zinc-200/60 pb-2.5 dark:border-zinc-800/60">
+    <div class="grid grid-cols-2 gap-2 pb-4 sm:grid-cols-5">
       <button
         v-for="cat in categories"
         :key="cat.id"
@@ -674,14 +674,14 @@ const categories = [
         @click="selectedType = cat.id"
         :disabled="uploading"
         :class="[
-          'flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold outline-none transition-all duration-200',
+          'flex flex-col items-center justify-center gap-2 rounded-xl border p-3.5 text-xs font-bold outline-none transition-all duration-200',
           selectedType === cat.id
-            ? 'bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
-            : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-200',
+            ? 'border-[#d4af37] bg-[#d4af37]/10 text-amber-700 shadow-sm dark:text-[#d4af37]'
+            : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950/20 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-900/40',
           uploading && 'cursor-not-allowed opacity-50'
         ]"
       >
-        <component :is="cat.icon" class="size-3.5" />
+        <component :is="cat.icon" class="size-5 shrink-0" />
         <span>{{ cat.label }}</span>
       </button>
     </div>

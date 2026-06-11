@@ -92,7 +92,10 @@ const isModeToggleDisabled = computed(() => {
 </script>
 
 <template>
-  <main class="flex min-h-screen flex-col pb-48 md:pb-0">
+  <main class="relative flex min-h-screen flex-col overflow-x-hidden pb-48 md:pb-0">
+    <!-- Ambient luxury background mesh -->
+    <div class="ambient-luxury-mesh"></div>
+
     <!-- Desktop header - only visible on desktop -->
     <div
       class="hidden md:mx-auto md:my-8 md:flex md:w-5/6 md:flex-row md:items-center md:justify-between md:px-4"
@@ -313,17 +316,17 @@ const isModeToggleDisabled = computed(() => {
           <div class="mt-6 flex flex-wrap justify-center gap-3">
             <button
               @click="setAppMode(AppMode.Create)"
-              class="border-[var(--accent-gold)]/30 flex items-center gap-2 rounded-xl border bg-[var(--primary)] px-5 py-2.5 text-xs font-bold text-[var(--primary-foreground)] shadow-md transition-all hover:scale-105 active:scale-95"
+              class="btn-gold-gradient flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-md hover:scale-105 active:scale-95"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              <span>{{ t('เริ่มสร้าง QR Code') || 'เริ่มสร้าง QR Code' }}</span>
+              <span>สร้าง QR</span>
             </button>
             <button
               @click="setAppMode(AppMode.Scan)"
-              class="flex items-center gap-2 rounded-xl border border-[var(--border-zinc)] bg-white/60 px-5 py-2.5 text-xs font-bold text-zinc-700 shadow-sm transition-all hover:scale-105 hover:bg-white active:scale-95 dark:bg-zinc-900/60 dark:text-zinc-300"
+              class="btn-gold-outline flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-sm hover:scale-105 active:scale-95"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span>{{ t('สแกน QR Code') || 'สแกน QR Code' }}</span>
+              <span>แชร์ไฟล์</span>
             </button>
           </div>
         </section>

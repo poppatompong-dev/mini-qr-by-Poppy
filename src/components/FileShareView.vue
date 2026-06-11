@@ -441,11 +441,12 @@ onMounted(() => {
             {{ t('รายการไฟล์ทั้งหมด') || 'รายการไฟล์ทั้งหมด' }}
           </h4>
           
-          <div class="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+          <div class="max-h-[300px] space-y-2.5 overflow-y-auto pr-1">
             <div
               v-for="filename in shareData.files_list"
               :key="filename"
-              class="flex items-center justify-between gap-4 rounded-xl border border-zinc-200/60 bg-white p-3 transition hover:bg-zinc-50/50 dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:hover:bg-zinc-900/40"
+              @click="openPreview(filename)"
+              class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-zinc-200/60 bg-white p-3.5 transition-all duration-300 hover:scale-[1.005] hover:border-blue-300 hover:bg-blue-50/5 hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:hover:border-blue-800/60 dark:hover:bg-zinc-900/40"
             >
               <!-- Left: Icon & Name -->
               <div class="flex min-w-0 flex-1 items-center gap-3">
@@ -456,7 +457,7 @@ onMounted(() => {
                   />
                 </div>
                 <div class="min-w-0 flex-1">
-                  <p class="dark:text-zinc-250 truncate text-xs font-bold text-zinc-800">
+                  <p class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
                     {{ filename }}
                   </p>
                   <div class="mt-0.5 flex items-center gap-2">
@@ -471,20 +472,22 @@ onMounted(() => {
               </div>
 
               <!-- Right: Actions (View & Download) -->
-              <div class="flex items-center gap-1.5 shrink-0">
+              <div class="flex shrink-0 items-center gap-2">
                 <button
-                  @click="openPreview(filename)"
-                  class="hover:text-zinc-850 flex size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  @click.stop="openPreview(filename)"
+                  class="text-zinc-650 dark:hover:text-blue-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs font-bold transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/40"
                   :title="t('ดูตัวอย่างไฟล์') || 'ดูตัวอย่างไฟล์'"
                 >
-                  <Eye class="size-4" />
+                  <Eye class="size-3.5" />
+                  <span class="hidden sm:inline">{{ t('ดูตัวอย่าง') || 'ดูตัวอย่าง' }}</span>
                 </button>
                 <button
-                  @click="handleDownloadSingle(filename)"
-                  class="hover:text-zinc-850 flex size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  @click.stop="handleDownloadSingle(filename)"
+                  class="text-zinc-650 dark:hover:text-emerald-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs font-bold transition-all hover:border-emerald-200 hover:bg-emerald-50/40 hover:text-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/40"
                   :title="t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์'"
                 >
-                  <Download class="size-4" />
+                  <Download class="size-3.5" />
+                  <span class="hidden sm:inline">{{ t('ดาวน์โหลด') || 'ดาวน์โหลด' }}</span>
                 </button>
               </div>
             </div>
@@ -536,18 +539,19 @@ onMounted(() => {
     </div>
 
     <!-- Preview Modal -->
-    <div
-      v-if="isPreviewOpen && shareData"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-all duration-300"
-    >
+    <Transition name="slide-up">
       <div
-        class="glass-card flex h-[80vh] w-full max-w-3xl flex-col border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/90 md:p-6"
+        v-if="isPreviewOpen && shareData"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       >
+        <div
+          class="glass-card flex h-[85vh] w-full flex-col rounded-t-3xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:h-[80vh] sm:max-w-3xl sm:rounded-2xl md:p-6"
+        >
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-zinc-200 pb-3.5 dark:border-zinc-800">
           <div class="min-w-0 flex-1">
             <span class="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              พรีวิวไฟล์ (File Preview) — {{ currentPreviewIndex + 1 }} / {{ shareData.files_list.length }}
+              {{ t('พรีวิวไฟล์ (File Preview)') || 'พรีวิวไฟล์ (File Preview)' }} — {{ currentPreviewIndex + 1 }} / {{ shareData.files_list.length }}
             </span>
             <h3 class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-200">
               {{ currentPreviewFilename }}
@@ -562,7 +566,7 @@ onMounted(() => {
         </div>
 
         <!-- Modal Content Preview Area -->
-        <div class="flex-1 overflow-auto py-5 flex items-center justify-center min-h-0 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-xl my-4 border border-zinc-150/40 dark:border-zinc-800/40">
+        <div class="border-zinc-150/40 my-4 flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-xl border bg-zinc-50/50 py-5 dark:border-zinc-800/40 dark:bg-zinc-950/20">
           <!-- Image Preview -->
           <div v-if="currentPreviewType === 'image'" class="flex max-h-full max-w-full items-center justify-center p-2">
             <img
@@ -574,7 +578,7 @@ onMounted(() => {
 
           <!-- Audio Preview -->
           <div v-else-if="currentPreviewType === 'audio'" class="w-full max-w-md p-6 text-center">
-            <div class="mb-4 mx-auto flex size-14 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400">
+            <div class="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400">
               <FileAudio class="size-7" />
             </div>
             <audio controls class="w-full" :src="currentPreviewUrl"></audio>
@@ -590,105 +594,127 @@ onMounted(() => {
           </div>
 
           <!-- Text Preview -->
-          <div v-else-if="currentPreviewType === 'text'" class="w-full h-full p-4 overflow-auto">
-            <div v-if="textFileLoading" class="flex flex-col items-center justify-center h-full py-10">
+          <div v-else-if="currentPreviewType === 'text'" class="size-full overflow-auto p-4">
+            <div v-if="textFileLoading" class="flex h-full flex-col items-center justify-center py-10">
               <Loader2 class="size-6 animate-spin text-blue-600 dark:text-blue-400" />
               <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ t('กำลังโหลดข้อมูล...') }}</p>
             </div>
-            <div v-else-if="textFileError" class="flex flex-col items-center justify-center h-full text-center text-red-500">
-              <AlertCircle class="size-6 mb-2" />
+            <div v-else-if="textFileError" class="flex h-full flex-col items-center justify-center text-center text-red-500">
+              <AlertCircle class="mb-2 size-6" />
               <p class="text-xs font-bold">{{ t('ไม่สามารถพรีวิวไฟล์ข้อความนี้ได้') }}</p>
             </div>
-            <pre v-else class="text-left font-mono text-xs whitespace-pre-wrap text-zinc-700 dark:text-zinc-300 select-text bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 h-full overflow-auto max-h-[50vh]">{{ textFileContent }}</pre>
+            <pre v-else class="h-full max-h-[50vh] select-text overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-white p-3.5 text-left font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">{{ textFileContent }}</pre>
           </div>
 
           <!-- PDF Preview -->
-          <div v-else-if="currentPreviewType === 'pdf'" class="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+          <div v-else-if="currentPreviewType === 'pdf'" class="flex size-full flex-col items-center justify-center p-6 text-center">
             <iframe
               :src="currentPreviewUrl"
-              class="hidden md:block w-full h-[50vh] rounded-lg border border-zinc-200 dark:border-zinc-800"
+              class="hidden h-[50vh] w-full rounded-lg border border-zinc-200 dark:border-zinc-800 md:block"
             ></iframe>
-            <div class="md:hidden flex flex-col items-center">
-              <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400">
+            <div class="flex flex-col items-center md:hidden">
+              <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
                 <FileText class="size-7" />
               </div>
-              <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">{{ currentPreviewFilename }}</h4>
-              <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-4">คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์</p>
+              <h4 class="mb-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">{{ currentPreviewFilename }}</h4>
+              <p class="mb-4 text-xs text-zinc-500 dark:text-zinc-400">{{ t('คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์') || 'คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์' }}</p>
               <a
                 :href="currentPreviewUrl"
                 target="_blank"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
               >
                 <ExternalLink class="size-3.5" />
-                <span>เปิดไฟล์ PDF</span>
+                <span>{{ t('เปิดไฟล์ PDF') || 'เปิดไฟล์ PDF' }}</span>
               </a>
             </div>
           </div>
 
           <!-- Other Files Preview -->
           <div v-else class="w-full max-w-sm p-6 text-center">
-            <div class="mb-4 mx-auto flex size-14 items-center justify-center rounded-full bg-zinc-150 dark:bg-zinc-850 text-zinc-650 dark:text-zinc-450">
+            <div class="bg-zinc-150 dark:bg-zinc-850 text-zinc-650 dark:text-zinc-450 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
               <component
                 :is="getFileTypeMeta(currentPreviewFilename).icon"
                 class="size-7"
               />
             </div>
-            <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">{{ currentPreviewFilename }}</h4>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
-              ไฟล์ประเภทนี้ยังไม่รองรับการแสดงตัวอย่างในเบราว์เซอร์
+            <h4 class="mb-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">{{ currentPreviewFilename }}</h4>
+            <p class="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
+              {{ t('ไฟล์ประเภทนี้ยังไม่รองรับการแสดงตัวอย่างในเบราว์เซอร์') || 'ไฟล์ประเภทนี้ยังไม่รองรับการแสดงตัวอย่างในเบราว์เซอร์' }}
             </p>
             <button
               @click="handleDownloadSingle(currentPreviewFilename)"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600 px-4 py-2 text-xs font-bold text-white transition-all shadow-md active:scale-95"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-zinc-700 active:scale-95 dark:bg-zinc-700 dark:hover:bg-zinc-600"
             >
               <Download class="size-3.5" />
-              <span>ดาวน์โหลดไฟล์</span>
+              <span>{{ t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์' }}</span>
             </button>
           </div>
         </div>
 
         <!-- Navigation & Actions Footer -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-200 pt-3.5 dark:border-zinc-800">
+        <div class="flex flex-col items-center justify-between gap-4 border-t border-zinc-200 pt-3.5 dark:border-zinc-800 sm:flex-row">
           <!-- Left: Previous / Next buttons -->
-          <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+          <div class="flex w-full items-center justify-center gap-2 sm:w-auto">
             <button
               @click="prevPreview"
-              class="flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+              class="dark:hover:bg-zinc-850 flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
             >
               <ChevronLeft class="size-4" />
-              <span>ย้อนกลับ</span>
+              <span>{{ t('ย้อนกลับ') || 'ย้อนกลับ' }}</span>
             </button>
             <button
               @click="nextPreview"
-              class="flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+              class="dark:hover:bg-zinc-850 flex items-center gap-1 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
             >
-              <span>ถัดไป</span>
+              <span>{{ t('ถัดไป') || 'ถัดไป' }}</span>
               <ChevronRight class="size-4" />
             </button>
           </div>
 
           <!-- Right: Action Buttons -->
-          <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+          <div class="flex w-full items-center justify-center gap-2 sm:w-auto">
             <a
               v-if="currentPreviewType !== 'other'"
               :href="currentPreviewUrl"
               target="_blank"
-              class="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-850 active:scale-95 transition-all"
+              class="dark:hover:bg-zinc-850 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
             >
               <ExternalLink class="size-4" />
-              <span>เปิดในแท็บใหม่</span>
+              <span>{{ t('เปิดในแท็บใหม่') || 'เปิดในแท็บใหม่' }}</span>
             </a>
             <button
               @click="handleDownloadSingle(currentPreviewFilename)"
-              class="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+              class="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-blue-700 active:scale-95"
             >
               <Download class="size-4" />
-              <span>ดาวน์โหลด</span>
+              <span>{{ t('ดาวน์โหลด') || 'ดาวน์โหลด' }}</span>
             </button>
           </div>
         </div>
 
       </div>
     </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+/* slide-up bottom sheet transition */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: opacity 0.25s ease;
+}
+.slide-up-enter-active .glass-card,
+.slide-up-leave-active .glass-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+}
+.slide-up-enter-from .glass-card,
+.slide-up-leave-to .glass-card {
+  transform: translateY(100%);
+}
+</style>

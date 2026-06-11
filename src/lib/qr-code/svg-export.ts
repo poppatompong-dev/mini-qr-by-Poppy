@@ -43,6 +43,12 @@ export interface LegacyFrameInput {
   textColorBottom?: string
   fontSizeTop?: number
   fontSizeBottom?: number
+  fontWeightTop?: string
+  fontWeightBottom?: string
+  fontStyleTop?: string
+  fontStyleBottom?: string
+  fontFamilyTop?: string
+  fontFamilyBottom?: string
 }
 
 export interface SvgExportInput {
@@ -148,7 +154,13 @@ function toFrameConfig(input: LegacyFrameInput): FrameConfig {
     textColorTop: input.textColorTop,
     textColorBottom: input.textColorBottom,
     fontSizeTop: input.fontSizeTop,
-    fontSizeBottom: input.fontSizeBottom
+    fontSizeBottom: input.fontSizeBottom,
+    fontWeightTop: input.fontWeightTop,
+    fontWeightBottom: input.fontWeightBottom,
+    fontStyleTop: input.fontStyleTop,
+    fontStyleBottom: input.fontStyleBottom,
+    fontFamilyTop: input.fontFamilyTop,
+    fontFamilyBottom: input.fontFamilyBottom
   }
   if (s.textColor) out.textColor = s.textColor
   if (s.backgroundColor) out.backgroundColor = s.backgroundColor

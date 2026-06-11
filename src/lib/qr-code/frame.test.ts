@@ -36,6 +36,51 @@ describe('renderFramed', () => {
     expect(svg).toContain(utf8)
   })
 
+  it('renders top and bottom text simultaneously when textTop and textBottom are set', () => {
+    const { svg, width, height } = renderFramed({
+      ...baseConfig('bottom'),
+      frame: {
+        text: 'unused',
+        textPosition: 'bottom',
+        textTop: 'Top Heading',
+        textBottom: 'Bottom Footer',
+        fontSizeTop: 20,
+        fontSizeBottom: 16
+      }
+    })
+    expect(svg).toContain('Top Heading')
+    expect(svg).toContain('Bottom Footer')
+    expect(svg).not.toContain('unused')
+  })
+
+  it('falls back to single text at bottom if textBottom is empty but textPosition is bottom', () => {
+    const { svg } = renderFramed({
+      ...baseConfig('bottom'),
+      frame: {
+        text: 'Fallback Bottom',
+        textPosition: 'bottom',
+        textTop: 'Top Heading',
+        textBottom: ''
+      }
+    })
+    expect(svg).toContain('Top Heading')
+    expect(svg).toContain('Fallback Bottom')
+  })
+
+  it('falls back to single text at top if textTop is empty but textPosition is top', () => {
+    const { svg } = renderFramed({
+      ...baseConfig('top'),
+      frame: {
+        text: 'Fallback Top',
+        textPosition: 'top',
+        textTop: '',
+        textBottom: 'Bottom Footer'
+      }
+    })
+    expect(svg).toContain('Fallback Top')
+    expect(svg).toContain('Bottom Footer')
+  })
+
   it.each(['top', 'bottom', 'left', 'right'] as const)(
     'composes a translated <g> for textPosition=%s',
     (position) => {

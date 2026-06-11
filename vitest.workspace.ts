@@ -27,7 +27,7 @@ export default defineWorkspace([
       name: 'node',
       globals: true,
       environment: 'node',
-      include: ['src/**/*.test.ts'],
+      include: ['src/**/*.test.ts', 'supabase/functions/**/*.test.ts'],
       exclude: BROWSER_TESTS
     },
     resolve: { alias }

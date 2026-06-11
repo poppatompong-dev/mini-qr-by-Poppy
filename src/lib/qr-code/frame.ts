@@ -12,6 +12,12 @@ const DEFAULT_FRAME: Required<
     | 'textColorBottom'
     | 'fontSizeTop'
     | 'fontSizeBottom'
+    | 'fontWeightTop'
+    | 'fontWeightBottom'
+    | 'fontStyleTop'
+    | 'fontStyleBottom'
+    | 'fontFamilyTop'
+    | 'fontFamilyBottom'
   >
 > = {
   textColor: '#000000',
@@ -46,9 +52,16 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
 
   const f = { ...DEFAULT_FRAME, ...config.frame }
   
-  // Determine if using new top/bottom text properties
-  const hasTop = typeof f.textTop === 'string' && f.textTop.trim() !== ''
-  const hasBottom = typeof f.textBottom === 'string' && f.textBottom.trim() !== ''
+  const resolvedTextTop = (typeof f.textTop === 'string' && f.textTop.trim() !== '')
+    ? f.textTop
+    : (f.textPosition === 'top' && typeof f.text === 'string' && f.text.trim() !== '') ? f.text : ''
+
+  const resolvedTextBottom = (typeof f.textBottom === 'string' && f.textBottom.trim() !== '')
+    ? f.textBottom
+    : (f.textPosition === 'bottom' && typeof f.text === 'string' && f.text.trim() !== '') ? f.text : ''
+
+  const hasTop = resolvedTextTop !== ''
+  const hasBottom = resolvedTextBottom !== ''
 
   let outerW: number
   let outerH: number
@@ -64,9 +77,15 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
     const fontSizeBottom = f.fontSizeBottom || f.fontSize
     const textColorTop = f.textColorTop || f.textColor
     const textColorBottom = f.textColorBottom || f.textColor
+    const fontWeightTop = f.fontWeightTop || 'normal'
+    const fontWeightBottom = f.fontWeightBottom || 'normal'
+    const fontStyleTop = f.fontStyleTop || 'normal'
+    const fontStyleBottom = f.fontStyleBottom || 'normal'
+    const fontFamilyTop = f.fontFamilyTop || f.fontFamily
+    const fontFamilyBottom = f.fontFamilyBottom || f.fontFamily
 
-    const topLines = hasTop ? wrapLines(f.textTop!, fontSizeTop, size) : []
-    const bottomLines = hasBottom ? wrapLines(f.textBottom!, fontSizeBottom, size) : []
+    const topLines = hasTop ? wrapLines(resolvedTextTop, fontSizeTop, size) : []
+    const bottomLines = hasBottom ? wrapLines(resolvedTextBottom, fontSizeBottom, size) : []
 
     const lineHeightTop = fontSizeTop * 1.2
     const lineHeightBottom = fontSizeBottom * 1.2
@@ -85,8 +104,9 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
 
     if (hasTop) {
       textNodes +=
-        `<text x="${textXVal}" y="${textTopY}" font-family="${escapeAttr(f.fontFamily)}" ` +
-        `font-size="${fontSizeTop}" fill="${escapeAttr(textColorTop)}" text-anchor="middle">` +
+        `<text x="${textXVal}" y="${textTopY}" font-family="${escapeAttr(fontFamilyTop)}" ` +
+        `font-size="${fontSizeTop}" font-weight="${escapeAttr(fontWeightTop)}" font-style="${escapeAttr(fontStyleTop)}" ` +
+        `fill="${escapeAttr(textColorTop)}" text-anchor="middle">` +
         topLines
           .map(
             (line, i) =>
@@ -97,8 +117,9 @@ export function renderFramed(config: ResolvedQRCodeConfig): FramedSvg {
     }
     if (hasBottom) {
       textNodes +=
-        `<text x="${textXVal}" y="${textBottomY}" font-family="${escapeAttr(f.fontFamily)}" ` +
-        `font-size="${fontSizeBottom}" fill="${escapeAttr(textColorBottom)}" text-anchor="middle">` +
+        `<text x="${textXVal}" y="${textBottomY}" font-family="${escapeAttr(fontFamilyBottom)}" ` +
+        `font-size="${fontSizeBottom}" font-weight="${escapeAttr(fontWeightBottom)}" font-style="${escapeAttr(fontStyleBottom)}" ` +
+        `fill="${escapeAttr(textColorBottom)}" text-anchor="middle">` +
         bottomLines
           .map(
             (line, i) =>

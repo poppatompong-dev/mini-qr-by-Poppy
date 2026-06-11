@@ -442,8 +442,19 @@
   "With background": "With background",
   "WPA/WPA2": "WPA/WPA2",
   "Your network name": "Your network name",
-  "YYYY-MM-DDTHH:MM": "YYYY-MM-DDTHH:MM",
-  "Zipcode": "Zipcode",
-  "Zip Code": "Zip Code",
-  "Zipping files...": "Zipping files..."
+  "Zipping files...": "Zipping files...",
+  "ดูตัวอย่าง": "Preview",
+  "ดาวน์โหลด": "Download",
+  "พรีวิวไฟล์ (File Preview)": "File Preview",
+  "คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์": "Click the button below to open the PDF document directly in the browser",
+  "เปิดไฟล์ PDF": "Open PDF File",
+  "ไฟล์ประเภทนี้ยังไม่รองรับการแสดงตัวอย่างในเบราว์เซอร์": "This file type is not supported for preview in the browser",
+  "ดาวน์โหลดไฟล์": "Download File",
+  "ย้อนกลับ": "Back",
+  "ถัดไป": "Next",
+  "เปิดในแท็บใหม่": "Open in New Tab",
+  "Data Type": "Data Type",
+  "Style Settings": "Style & Colors",
+  "Eye & Frame Settings": "Frame & Eyes",
+  "Logo & Center Settings": "Center Logo"
 }

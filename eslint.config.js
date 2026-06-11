@@ -18,7 +18,8 @@ export default [
       '*.json',
       'storybook-static/**',
       '.agents/**',
-      'scratch/**'
+      'scratch/**',
+      'supabase/**'
     ]
   },
   js.configs.recommended,

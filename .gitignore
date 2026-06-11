@@ -51,3 +51,4 @@ scratch/
 
 # Vitest browser-mode failure screenshots
 __screenshots__/
+.env*

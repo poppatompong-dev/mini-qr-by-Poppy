@@ -59,6 +59,12 @@ export interface FrameConfig {
   textColorBottom?: string
   fontSizeTop?: number
   fontSizeBottom?: number
+  fontWeightTop?: string
+  fontWeightBottom?: string
+  fontStyleTop?: string
+  fontStyleBottom?: string
+  fontFamilyTop?: string
+  fontFamilyBottom?: string
 }
 
 export interface QRCodeConfig {
