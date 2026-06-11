@@ -53,6 +53,7 @@ import {
   loadQRConfig,
   saveQRConfig,
   serializeQRConfig,
+  QR_CODE_STORAGE_KEY,
   type QRCodeConfig,
   type QRCodeFrameConfig
 } from '@/utils/useQRCodeStorage'
@@ -103,6 +104,7 @@ const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver
 
 //#region /* QR code style settings */
 const data = ref(props.initialData || import.meta.env.VITE_DEFAULT_DATA_TO_ENCODE || '')
+const templateResetKey = ref(0)
 const debouncedData = ref(data.value)
 const previewData = computed(() =>
   debouncedData.value?.length > 0 ? debouncedData.value : defaultQRCodeText.value
@@ -1105,6 +1107,48 @@ function resetBatchExport() {
   }
 }
 
+function resetToDefaultSettings() {
+  const confirmMsg = t('คุณแน่ใจหรือไม่ที่จะล้างการตั้งค่าทั้งหมดกลับเป็นค่าเริ่มต้น?') || 'Are you sure you want to reset all settings to default?'
+  if (!window.confirm(confirmMsg)) return
+
+  // 1. Clear stored localStorage config
+  if (isLocalStorageEnabled()) {
+    localStorage.removeItem(QR_CODE_STORAGE_KEY)
+  }
+
+  // 2. Force recreate child templates
+  templateResetKey.value++
+
+  // 3. Reset all batch csv/data
+  resetBatchExport()
+
+  // 4. Reset primary properties
+  data.value = props.initialData || import.meta.env.VITE_DEFAULT_DATA_TO_ENCODE || ''
+  image.value = undefined
+  selectedPreset.value = { ...defaultPreset }
+  selectedPresetKey.value = defaultPreset.name
+  selectedFramePresetKey.value = import.meta.env.VITE_FRAME_PRESET || defaultFramePreset.name
+
+  // Reset frame fields
+  showFrame.value = false
+  frameText.value = ''
+  frameTextTop.value = ''
+  frameTextBottom.value = ''
+  frameTextTopSize.value = 18
+  frameTextBottomSize.value = 18
+  frameTextTopColor.value = ''
+  frameTextBottomColor.value = ''
+  frameTextTopWeight.value = 'normal'
+  frameTextBottomWeight.value = 'normal'
+  frameTextTopItalic.value = 'normal'
+  frameTextBottomItalic.value = 'normal'
+  frameTextTopFont.value = ''
+  frameTextBottomFont.value = ''
+
+  // Trigger preset apply manually to ensure state matches defaults
+  applySelectedPresetToState()
+}
+
 const framePositions: Array<'top' | 'bottom' | 'left' | 'right'> = [
   'top',
   'bottom',
@@ -1752,6 +1796,26 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
       <div
         class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40"
       >
+        <!-- Card Header with Title and Reset Button -->
+        <div class="mb-4 flex flex-col gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/60 sm:flex-row sm:items-center sm:justify-between">
+          <span class="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            {{ t('ตั้งค่าและรูปแบบ QR') || 'ตั้งค่าและรูปแบบ QR' }}
+          </span>
+          <button
+            type="button"
+            @click="resetToDefaultSettings"
+            class="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-500 outline-none transition-all duration-300 hover:scale-105 hover:bg-red-100 hover:text-red-600 active:scale-[0.98] dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/40"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M16 3h5v5"/>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+              <path d="M8 21H3v-5"/>
+            </svg>
+            <span>{{ t('ล้างการตั้งค่าใหม่ทั้งหมด') || 'ล้างการตั้งค่าใหม่ทั้งหมด' }}</span>
+          </button>
+        </div>
+
         <!-- Tabs Header Bar -->
         <div
           class="no-scrollbar relative mb-5 grid grid-cols-4 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60"
@@ -1868,7 +1932,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
         <!-- Single QR Data Entry -->
         <div v-if="exportMode === ExportMode.Single" class="w-full">
-          <InlineDataTemplates v-model="data" />
+          <InlineDataTemplates :key="templateResetKey" v-model="data" />
         </div>
 
         <!-- Batch CSV Data Entry -->

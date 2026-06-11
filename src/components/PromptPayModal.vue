@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const PROMPTPAY_ID = '0836870393'
-const ACCOUNT_NAME = 'นายปฐมพงษ์ หล้ามหศักดิ์'
+const ACCOUNT_NAME = 'ปฐมพงษ์ หล้ามเหศักดิ์'
 
 const amount = ref<number | undefined>(undefined)
 const isCopied = ref(false)
