@@ -2212,7 +2212,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   <input
                     type="color"
                     id="background-color"
-                    v-model="styleBackground"
+                    :value="styleBackground === 'transparent' ? '#ffffff' : (styleBackground || '#ffffff')"
+                    @input="styleBackground = ($event.target as HTMLInputElement).value"
                     :disabled="!includeBackground"
                     class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 disabled:opacity-40 dark:border-zinc-800"
                   />
@@ -2229,7 +2230,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <input
                   type="color"
                   id="dots-color"
-                  v-model="dotsOptionsColor"
+                  :value="dotsOptionsColor || '#000000'"
+                  @input="dotsOptionsColor = ($event.target as HTMLInputElement).value"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
@@ -2392,7 +2394,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <input
                   type="color"
                   id="corners-square-color"
-                  v-model="cornersSquareOptionsColor"
+                  :value="cornersSquareOptionsColor || '#000000'"
+                  @input="cornersSquareOptionsColor = ($event.target as HTMLInputElement).value"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
@@ -2407,7 +2410,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <input
                   type="color"
                   id="corners-dot-color"
-                  v-model="cornersDotOptionsColor"
+                  :value="cornersDotOptionsColor || '#000000'"
+                  @input="cornersDotOptionsColor = ($event.target as HTMLInputElement).value"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
@@ -2531,7 +2535,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       <div class="flex items-center gap-1.5">
                         <input
                           type="color"
-                          v-model="frameTextTopColor"
+                          :value="frameTextTopColor || '#000000'"
+                          @input="frameTextTopColor = ($event.target as HTMLInputElement).value"
                           class="size-7 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800"
                         />
                         <button
@@ -2620,7 +2625,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       <div class="flex items-center gap-1.5">
                         <input
                           type="color"
-                          v-model="frameTextBottomColor"
+                          :value="frameTextBottomColor || '#000000'"
+                          @input="frameTextBottomColor = ($event.target as HTMLInputElement).value"
                           class="size-7 cursor-pointer rounded border border-zinc-200 dark:border-zinc-800"
                         />
                         <button
@@ -2775,7 +2781,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <input
                   type="color"
                   id="frame-text-color"
-                  v-model="frameStyle.textColor"
+                  :value="frameStyle.textColor || '#000000'"
+                  @input="frameStyle.textColor = ($event.target as HTMLInputElement).value"
                   class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 dark:border-zinc-800"
                 />
               </div>
@@ -2818,7 +2825,8 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     v-if="frameBackgroundType === 'color'"
                     type="color"
                     id="frame-bg-color"
-                    v-model="frameStyle.backgroundColor"
+                    :value="frameStyle.backgroundColor === 'transparent' ? '#ffffff' : (frameStyle.backgroundColor || '#ffffff')"
+                    @input="frameStyle.backgroundColor = ($event.target as HTMLInputElement).value"
                     class="size-8 cursor-pointer rounded-xl border border-zinc-200/80 dark:border-zinc-800"
                   />
                   <button
