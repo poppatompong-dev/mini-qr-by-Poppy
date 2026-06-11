@@ -14,6 +14,7 @@ import {
   generateVCardData,
   generateWifiData
 } from '@/utils/dataEncoding'
+import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
 import {
   Link,
   Wifi,
@@ -147,7 +148,7 @@ const handleCopyLink = async () => {
 
 const resetUploadState = () => {
   filesToUpload.value.forEach(item => {
-    if (item.previewUrl) {
+    if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(item.previewUrl)
     }
   })
@@ -170,12 +171,28 @@ const addFilesToList = (files: File[]) => {
   const mapped = files.map(file => {
     const isImage = file.type.startsWith('image/')
     const previewUrl = isImage ? URL.createObjectURL(file) : undefined
-    return {
+    const item = {
       id: window.crypto.randomUUID(),
       file,
       name: file.name,
       previewUrl
     }
+
+    // Generate PDF thumbnails asynchronously
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      generatePdfThumbnail(file)
+        .then(thumbnailUrl => {
+          const found = filesToUpload.value.find(f => f.id === item.id)
+          if (found) {
+            found.previewUrl = thumbnailUrl
+          }
+        })
+        .catch(err => {
+          console.error('Failed to generate PDF thumbnail:', err)
+        })
+    }
+
+    return item
   })
   filesToUpload.value = [...filesToUpload.value, ...mapped]
   triggerDataGeneration()
@@ -261,7 +278,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('paste', windowPasteHandler)
   filesToUpload.value.forEach(item => {
-    if (item.previewUrl) {
+    if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(item.previewUrl)
     }
   })
@@ -509,6 +526,7 @@ const handleFileUploadWorkflow = async () => {
         .from('qr-files')
         .upload(filePath, prepared.file, {
           cacheControl: '3600',
+          contentType: prepared.file.type || 'application/octet-stream',
           upsert: false
         })
 

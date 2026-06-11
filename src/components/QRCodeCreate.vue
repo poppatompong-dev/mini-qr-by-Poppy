@@ -698,7 +698,7 @@ const isExportButtonDisabled = computed(() => {
   return dataStringsFromCsv.value.length === 0
 })
 
-const PREVIEW_QRCODE_DIM_UNIT = 200
+const PREVIEW_QRCODE_DIM_UNIT = 260
 
 /**
  * Calculates the dimensions for QR code export
@@ -1578,11 +1578,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
       >
         <div class="flex flex-col items-center pb-2">
           <div class="mt-2.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
-          <div :class="['w-full', showFrame ? 'py-1' : '-my-8']">
+          <div :class="['flex w-full justify-center', showFrame ? 'py-1' : 'py-2']">
             <div
               :class="[
-                'flex items-center justify-center',
-                !showFrame && 'origin-center scale-[0.7]',
+                'border-zinc-150/80 flex items-center justify-center rounded-2xl border bg-white p-3 shadow-sm',
+                !showFrame && 'origin-center scale-[0.85]',
                 { 'qr-pulse-entrance': isQRAnimating }
               ]"
             >
@@ -2980,7 +2980,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         <div
           id="qr-code-container"
           :class="[
-            'mb-6 grid origin-center place-items-center',
+            'border-zinc-150/80 mb-6 grid origin-center place-items-center rounded-2xl border bg-white p-5 shadow-sm',
             { 'qr-pulse-entrance': isQRAnimating }
           ]"
         >

@@ -123,12 +123,24 @@ const handleDelete = async (row: any) => {
 
   try {
     // 1. Delete all individual files inside the folder from Supabase Storage
-    const { data: storageFiles, error: listError } = await supabase.storage
-      .from('qr-files')
-      .list(row.id)
+    let storageFiles = []
+    try {
+      const { data, error: listError } = await supabase.storage
+        .from('qr-files')
+        .list(row.id)
+      if (listError) throw listError
+      storageFiles = data || []
+    } catch (listErr: any) {
+      console.warn('Failed to list storage files for deletion, using fallback:', listErr.message)
+    }
 
-    if (listError) {
-      console.warn('Failed to list storage files for deletion:', listError.message)
+    // If listing failed or returned empty but we have db list, use deterministic names as a fallback
+    if (storageFiles.length === 0 && row.files_list && row.files_list.length > 0) {
+      storageFiles = row.files_list.map((filename: string, idx: number) => {
+        const ext = filename.split('.').pop()?.toLowerCase() || ''
+        const extStr = ext ? `.${ext}` : ''
+        return { name: `file_${idx}${extStr}` }
+      })
     }
 
     if (storageFiles && storageFiles.length > 0) {

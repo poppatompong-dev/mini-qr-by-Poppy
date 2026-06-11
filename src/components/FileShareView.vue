@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import { downloadBlob } from '@/utils/download'
+import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
+import { renderAsync as renderDocx } from 'docx-preview'
 import {
   ArrowLeft,
   Download,
@@ -113,6 +115,10 @@ const getFileTypeMeta = (filename: string) => {
 
 // Storage filename mapping
 const storageMap = ref<Record<string, string>>({})
+const pdfThumbnails = ref<Record<string, string>>({})
+const docxContainer = ref<HTMLElement | null>(null)
+const docxLoading = ref(false)
+const docxError = ref(false)
 
 const getFileExtension = (filename: string): string => {
   const parts = filename.split('.')
@@ -169,6 +175,20 @@ const fetchShareDetails = async () => {
     } catch (storageErr) {
       console.error('Failed to list files from storage:', storageErr)
     }
+
+    // Automatically generate thumbnails for any PDFs in the share list
+    data.files_list.forEach((filename: string) => {
+      if (filename.toLowerCase().endsWith('.pdf')) {
+        const url = getFileUrl(filename)
+        generatePdfThumbnail(url)
+          .then(thumbnailUrl => {
+            pdfThumbnails.value[filename] = thumbnailUrl
+          })
+          .catch(err => {
+            console.error(`Failed to generate thumbnail for ${filename}:`, err)
+          })
+      }
+    })
   } catch (err: any) {
     console.error('Failed to load share metadata:', err)
     error.value = err.message || t('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
@@ -298,6 +318,7 @@ const currentPreviewType = computed(() => {
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
   if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css'].includes(ext)) return 'text'
   if (ext === 'pdf') return 'pdf'
+  if (ext === 'docx') return 'docx'
   return 'other'
 })
 
@@ -321,7 +342,12 @@ const loadPreviewBlob = async (filename: string) => {
 
     if (dlError) throw dlError
     if (data) {
-      previewBlobUrl.value = URL.createObjectURL(data)
+      let blobToUse = data
+      // Force correct MIME type for PDF if it's application/octet-stream or has no type
+      if (filename.toLowerCase().endsWith('.pdf') && data.type !== 'application/pdf') {
+        blobToUse = new Blob([data], { type: 'application/pdf' })
+      }
+      previewBlobUrl.value = URL.createObjectURL(blobToUse)
     }
   } catch (err) {
     console.error('Failed to load preview blob:', err)
@@ -346,14 +372,47 @@ const loadTextContent = async (url: string) => {
   }
 }
 
+const renderDocxFile = async () => {
+  if (!previewBlobUrl.value || !docxContainer.value) return
+  docxLoading.value = true
+  docxError.value = false
+  try {
+    const res = await fetch(previewBlobUrl.value)
+    const blob = await res.blob()
+    
+    // Clear container
+    docxContainer.value.innerHTML = ''
+    
+    // Render Docx
+    await renderDocx(blob, docxContainer.value, undefined, {
+      className: 'docx-preview-container',
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false
+    })
+  } catch (err) {
+    console.error('Failed to render docx file:', err)
+    docxError.value = true
+  } finally {
+    docxLoading.value = false
+  }
+}
+
 watch([currentPreviewIndex, isPreviewOpen], async () => {
   if (isPreviewOpen.value) {
     const type = currentPreviewType.value
     if (type === 'text' && currentPreviewUrl.value) {
       await loadTextContent(currentPreviewUrl.value)
-    } else if (type === 'image' || type === 'pdf') {
+    } else if (type === 'image' || type === 'pdf' || type === 'docx') {
       await loadPreviewBlob(currentPreviewFilename.value)
     }
+  }
+})
+
+watch([previewBlobUrl, currentPreviewType], async () => {
+  if (isPreviewOpen.value && currentPreviewType.value === 'docx' && previewBlobUrl.value) {
+    await nextTick()
+    await renderDocxFile()
   }
 })
 
@@ -495,6 +554,12 @@ onMounted(() => {
                     :src="getFileUrl(filename)"
                     class="size-full object-cover"
                     alt="thumbnail"
+                  />
+                  <img
+                    v-else-if="filename.toLowerCase().endsWith('.pdf') && pdfThumbnails[filename]"
+                    :src="pdfThumbnails[filename]"
+                    class="size-full object-cover"
+                    alt="PDF thumbnail"
                   />
                   <!-- Beautiful mock document thumbnail for non-image files -->
                   <div
@@ -684,6 +749,23 @@ onMounted(() => {
             ></iframe>
           </div>
 
+          <!-- Docx Preview -->
+          <div v-else-if="currentPreviewType === 'docx'" class="size-full overflow-auto p-4 flex flex-col items-center">
+            <div v-if="previewLoading || docxLoading" class="flex flex-col items-center justify-center py-20">
+              <Loader2 class="size-8 animate-spin text-blue-600 dark:text-blue-400" />
+              <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{{ t('กำลังโหลดเอกสาร Word...') || 'กำลังโหลดเอกสาร Word...' }}</p>
+            </div>
+            <div v-else-if="previewError || docxError" class="flex flex-col items-center justify-center py-10 text-center text-red-500">
+              <AlertCircle class="mb-2 size-8" />
+              <p class="text-xs font-bold">{{ t('ไม่สามารถแสดงตัวอย่างเอกสาร Word นี้ได้') || 'ไม่สามารถแสดงตัวอย่างเอกสาร Word นี้ได้' }}</p>
+            </div>
+            <div
+              v-show="!previewLoading && !docxLoading && !previewError && !docxError"
+              ref="docxContainer"
+              class="w-full max-w-2xl bg-white p-4 shadow-sm rounded-lg overflow-auto border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-950"
+            ></div>
+          </div>
+
           <!-- Other Files Preview -->
           <div v-else class="w-full max-w-sm p-6 text-center">
             <div :class="`mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl border ${getFileTypeMeta(currentPreviewFilename).color}`">
@@ -754,6 +836,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
+:deep(.docx-preview-container) {
+  background: transparent !important;
+  padding: 0 !important;
+}
+:deep(.docx-preview-container > section.docx) {
+  margin-bottom: 2rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  padding: 2rem !important;
+}
+.dark :deep(.docx-preview-container > section.docx) {
+  border-color: #27272a !important;
+}
+
 /* slide-up bottom sheet transition */
 .slide-up-enter-active,
 .slide-up-leave-active {

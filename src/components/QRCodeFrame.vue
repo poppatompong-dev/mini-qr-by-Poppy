@@ -51,7 +51,7 @@ const props = withDefaults(defineProps<Props>(), {
   fontFamilyBottom: ''
 })
 
-const PREVIEW_QRCODE_DIM_UNIT = 200
+const PREVIEW_QRCODE_DIM_UNIT = 260
 
 const hasTop = computed(() => {
   return !!(props.frameTextTop || (props.textPosition === 'top' && props.frameText))
