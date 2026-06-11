@@ -121,11 +121,15 @@ onMounted(() => {
         @click="isPromptPayOpen = true"
       >{{ t('Sponsor') }}</button>
 
+      <span class="select-none font-bold text-[var(--accent-gold)]">•</span>
+
       <button
         @click="isAdminHistoryOpen = true"
-        class="hover:bg-[var(--accent-gold)]/10 ml-0.5 rounded-lg p-0.5 text-zinc-400 opacity-20 outline-none transition-all hover:text-[var(--accent-gold)] hover:opacity-100"
+        class="flex items-center gap-1 text-xs font-bold text-zinc-500 outline-none transition-all duration-300 hover:text-[var(--accent-gold)] dark:text-zinc-400 dark:hover:text-[var(--accent-gold)]"
+        :title="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
       >
-        <Key class="size-3" />
+        <Key class="size-3.5" />
+        <span>{{ t('ระบบแอดมิน') || 'ระบบแอดมิน' }}</span>
       </button>
     </div>
   </footer>

@@ -5,6 +5,8 @@ import QRCodeScan from '@/components/QRCodeScan.vue'
 import QRCodeCreate from '@/components/QRCodeCreate.vue'
 import FileShareView from '@/components/FileShareView.vue'
 import AppFooter from '@/components/AppFooter.vue'
+import AdminHistoryModal from '@/components/AdminHistoryModal.vue'
+import { Key } from 'lucide-vue-next'
 import useDarkModePreference from '@/utils/useDarkModePreference'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,6 +18,7 @@ const { isDarkMode, isDarkModePreferenceSetBySystem, toggleDarkModePreference } 
 const capturedData = ref<string>('')
 const qrCodeScanRef = ref<InstanceType<typeof QRCodeScan> | null>(null)
 const showUserGuide = ref(false)
+const isAdminHistoryOpen = ref(false)
 const toggleUserGuide = () => {
   showUserGuide.value = !showUserGuide.value
 }
@@ -163,6 +166,17 @@ const isModeToggleDisabled = computed(() => {
       </div>
 
       <div class="flex items-center justify-end gap-3">
+        <!-- Admin Settings Toggle Button -->
+        <button
+          class="flex h-9 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 text-blue-600 shadow-sm outline-none transition-all duration-300 hover:scale-105 hover:bg-blue-100 hover:text-blue-700 active:scale-[0.95] dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40 dark:hover:text-blue-300"
+          @click="isAdminHistoryOpen = true"
+          :title="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
+          :aria-label="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
+        >
+          <Key class="size-4 shrink-0 text-blue-500 dark:text-blue-400" />
+          <span class="text-xs font-bold">{{ t('ระบบแอดมิน') || 'ระบบแอดมิน' }}</span>
+        </button>
+
         <!-- User Guide Toggle Button -->
         <button
           class="grid size-9 place-items-center rounded-xl border outline-none transition-all duration-300 hover:scale-105 active:scale-[0.95]"
@@ -192,7 +206,7 @@ const isModeToggleDisabled = computed(() => {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
           </span>
           <span v-if="!isDarkModePreferenceSetBySystem && !isDarkMode">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
           </span>
         </button>
         <LanguageSelector />
@@ -261,11 +275,21 @@ const isModeToggleDisabled = computed(() => {
             :title="t('User Guide')"
             :aria-label="t('User Guide')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
+          </button>
+
+          <!-- Mobile Admin Settings Button -->
+          <button
+            class="grid size-7 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 shadow-sm outline-none transition-all duration-300 active:scale-[0.95] dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-400"
+            @click="isAdminHistoryOpen = true"
+            :title="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
+            :aria-label="t('ระบบจัดการไฟล์ผู้ดูแลระบบ') || 'ระบบจัดการไฟล์ผู้ดูแลระบบ'"
+          >
+            <Key class="size-3.5" />
           </button>
 
           <!-- Divider line -->
@@ -276,6 +300,7 @@ const isModeToggleDisabled = computed(() => {
             :isDarkMode="isDarkMode"
             :isDarkModePreferenceSetBySystem="isDarkModePreferenceSetBySystem"
             @toggle-dark-mode="toggleDarkModePreference"
+            @open-admin="isAdminHistoryOpen = true"
           />
         </div>
       </div>
@@ -326,7 +351,7 @@ const isModeToggleDisabled = computed(() => {
               class="btn-gold-outline flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-sm hover:scale-105 active:scale-95"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span>แชร์ไฟล์</span>
+              <span>สแกน</span>
             </button>
           </div>
         </section>
@@ -394,6 +419,7 @@ const isModeToggleDisabled = computed(() => {
       </div>
     </div>
     <AppFooter />
+    <AdminHistoryModal :open="isAdminHistoryOpen" @close="isAdminHistoryOpen = false" />
   </main>
 </template>
 

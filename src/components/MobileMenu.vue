@@ -16,7 +16,7 @@ import {
   DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog'
-import { X, Heart } from 'lucide-vue-next'
+import { X, Heart, Key } from 'lucide-vue-next'
 import PromptPayModal from '@/components/PromptPayModal.vue'
 
 defineProps<{
@@ -29,6 +29,7 @@ const isPromptPayOpen = ref(false)
 const emit = defineEmits<{
   (e: 'toggle-dark-mode'): void
   (e: 'close'): void
+  (e: 'open-admin'): void
 }>()
 
 const { t } = useI18n()
@@ -236,6 +237,15 @@ onUnmounted(() => {
         <div class="px-2 py-1.5">
           <LanguageSelector />
         </div>
+
+        <!-- Admin Settings Link -->
+        <button
+          class="flex items-center gap-2 rounded-md px-2 py-1.5 text-blue-600 hover:bg-blue-50/50 dark:text-blue-400 dark:hover:bg-blue-950/20"
+          @click="emit('open-admin'); closeMenu()"
+        >
+          <Key class="size-5" />
+          <span class="font-bold">{{ t('ระบบแอดมิน') || 'ระบบแอดมิน' }}</span>
+        </button>
 
         <hr class="border-zinc-200 dark:border-zinc-700" />
 
