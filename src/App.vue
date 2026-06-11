@@ -215,12 +215,12 @@ const isModeToggleDisabled = computed(() => {
 
     <!-- Mobile sticky header - only visible on mobile -->
     <div
-      class="scroll-header-container fixed inset-x-0 top-0 z-50 px-2 pt-3 md:hidden"
+      class="scroll-header-container fixed left-1/2 top-0 z-50 w-full max-w-md -translate-x-1/2 px-4 pt-3 md:hidden"
       :class="{ 'header-collapsed': isHeaderCollapsed }"
     >
       <div class="flex justify-center">
         <div
-          class="duration-350 relative flex items-center gap-1.5 rounded-xl border border-[var(--border-zinc)] bg-white/95 p-1 pr-2 shadow-lg backdrop-blur-md transition-all dark:bg-zinc-900/95"
+          class="duration-350 relative flex items-center gap-1.5 rounded-xl border border-[var(--border-zinc)] bg-white/95 p-1.5 shadow-lg backdrop-blur-md transition-all dark:bg-zinc-900/95"
         >
           <!-- Switcher buttons container with sliding pill -->
           <div class="relative flex w-[146px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40">

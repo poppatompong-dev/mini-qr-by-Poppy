@@ -297,7 +297,7 @@ const currentPreviewType = computed(() => {
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio'
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
   if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css'].includes(ext)) return 'text'
-  if (ext === 'pdf') return 'pdf'
+  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) return 'document'
   return 'other'
 })
 
@@ -450,11 +450,24 @@ onMounted(() => {
             >
               <!-- Left: Icon & Name -->
               <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                <div class="dark:border-zinc-850 flex size-8 shrink-0 items-center justify-center rounded-xl border border-zinc-200/60 bg-zinc-50/50 dark:bg-zinc-950 sm:size-9">
-                  <component
-                    :is="getFileTypeMeta(filename).icon"
-                    class="sm:size-4.5 size-4 text-zinc-500 dark:text-zinc-400"
+                <div class="dark:border-zinc-850 flex size-8 shrink-0 select-none items-center justify-center overflow-hidden rounded-xl border border-zinc-200/60 bg-zinc-50/50 dark:bg-zinc-950 sm:size-9">
+                  <img
+                    v-if="getFileTypeMeta(filename).label === 'IMG' && getFileUrl(filename)"
+                    :src="getFileUrl(filename)"
+                    class="size-full object-cover"
+                    alt="thumbnail"
                   />
+                  <!-- Beautiful mock document thumbnail for non-image files -->
+                  <div
+                    v-else
+                    :class="`flex flex-col items-center justify-center size-full font-mono leading-none ${getFileTypeMeta(filename).color}`"
+                  >
+                    <component
+                      :is="getFileTypeMeta(filename).icon"
+                      class="mb-0.5 size-3.5 opacity-90"
+                    />
+                    <span class="text-[7px] font-bold uppercase tracking-tight">{{ getFileTypeMeta(filename).label }}</span>
+                  </div>
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
@@ -606,27 +619,12 @@ onMounted(() => {
             <pre v-else class="h-full max-h-[50vh] select-text overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-white p-3.5 text-left font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">{{ textFileContent }}</pre>
           </div>
 
-          <!-- PDF Preview -->
-          <div v-else-if="currentPreviewType === 'pdf'" class="flex size-full flex-col items-center justify-center p-6 text-center">
+          <!-- Document Preview (PDF, Word, Excel, PowerPoint) -->
+          <div v-else-if="currentPreviewType === 'document'" class="flex size-full flex-col items-center justify-center p-2">
             <iframe
-              :src="currentPreviewUrl"
-              class="hidden h-[50vh] w-full rounded-lg border border-zinc-200 dark:border-zinc-800 md:block"
+              :src="`https://docs.google.com/gview?url=${encodeURIComponent(currentPreviewUrl)}&embedded=true`"
+              class="h-[50vh] w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
             ></iframe>
-            <div class="flex flex-col items-center md:hidden">
-              <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
-                <FileText class="size-7" />
-              </div>
-              <h4 class="mb-2 text-sm font-bold text-zinc-800 dark:text-zinc-200">{{ currentPreviewFilename }}</h4>
-              <p class="mb-4 text-xs text-zinc-500 dark:text-zinc-400">{{ t('คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์') || 'คลิกปุ่มด้านล่างเพื่อเปิดอ่านเอกสาร PDF โดยตรงในเบราว์เซอร์' }}</p>
-              <a
-                :href="currentPreviewUrl"
-                target="_blank"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-red-700 active:scale-95"
-              >
-                <ExternalLink class="size-3.5" />
-                <span>{{ t('เปิดไฟล์ PDF') || 'เปิดไฟล์ PDF' }}</span>
-              </a>
-            </div>
           </div>
 
           <!-- Other Files Preview -->
