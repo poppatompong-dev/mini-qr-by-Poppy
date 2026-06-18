@@ -102,6 +102,70 @@ docker build \
   -t mini-qr .
 ```
 
+## Optional: File-Sharing Feature (Supabase)
+
+MiniQR can optionally let users upload files and share them via a QR code. This
+feature is **disabled unless you configure Supabase**. It relies on Supabase
+Storage, Postgres (with Row-Level Security), and four Edge Functions that hold
+all privileged logic server-side.
+
+> **Security model:** The browser bundle only ever receives the **anon** key.
+> Uploads go through short-lived signed URLs minted by an Edge Function, every
+> share is validated and expires automatically, and admin actions are gated by
+> a server-only `ADMIN_SECRET`. No service-role key or admin password is ever
+> shipped to the client.
+
+### 1. Client (build-time) variables
+
+| Variable                 | Description                                                          | Default |
+| ------------------------ | -------------------------------------------------------------------- | ------- |
+| `VITE_SUPABASE_URL`      | Your Supabase project URL (e.g. `https://xxxx.supabase.co`)          | `""`    |
+| `VITE_SUPABASE_ANON_KEY` | Supabase **anon/public** key (safe to expose; never the service key) | `""`    |
+| `VITE_SHARE_EXPIRY_DAYS` | Number shown in the upload privacy notice (cosmetic only)            | `7`     |
+
+### 2. Edge Function secrets (server-side only)
+
+Set these with `supabase secrets set` — they are **never** exposed to the browser:
+
+| Secret                      | Description                                                       | Default      |
+| --------------------------- | ----------------------------------------------------------------- | ------------ |
+| `ADMIN_SECRET`              | Long random string required to access the admin panel             | _(required)_ |
+| `SHARE_EXPIRY_DAYS`         | Days before a share auto-expires                                  | `7`          |
+| `MAX_UPLOAD_BYTES`          | Max total upload size per share (bytes)                           | `10485760`   |
+| `MAX_FILES_PER_SHARE`       | Max number of files per share                                     | `20`         |
+| `ORPHAN_GRACE_MINUTES`      | Grace period before abandoned `pending`/`failed` shares are reaped | `60`         |
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by the
+Supabase platform for deployed functions.
+
+### 3. Apply the database migration
+
+Run the migration to create the hardened schema, RLS policies, storage policies,
+and the admin audit log:
+
+```bash
+supabase db push
+# or paste supabase/migrations/0001_harden_qr_files_log.sql into the SQL Editor
+```
+
+### 4. Deploy the Edge Functions
+
+```bash
+supabase secrets set ADMIN_SECRET="<long-random-secret>" SHARE_EXPIRY_DAYS=7 \
+  MAX_UPLOAD_BYTES=10485760 MAX_FILES_PER_SHARE=20
+
+supabase functions deploy share-session
+supabase functions deploy share-finalize
+supabase functions deploy admin-shares
+supabase functions deploy cleanup-expired-shares
+```
+
+### 5. Schedule cleanup
+
+Invoke `cleanup-expired-shares` on a schedule (e.g. hourly) to delete expired
+shares and reap orphaned uploads. Use Supabase's scheduler / `pg_cron`, or any
+external cron hitting the function URL with the `x-admin-secret` header.
+
 ## Custom Presets
 
 ### QR Code Presets (`VITE_QR_CODE_PRESETS`)

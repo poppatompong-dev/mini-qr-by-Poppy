@@ -1,5 +1,16 @@
 # Production Hardening Implementation Plan
 
+> **✅ Implementation status (2026-06-18):** The Priority 1 hardening described
+> in this plan has been implemented and verified (`pnpm type-check`,
+> `pnpm vitest run`, `eslint` all pass). The shipped code differs from the
+> draft snippets below in a few names/details — the authoritative sources are
+> the actual files in `supabase/` and `src/`, plus `SELF_HOSTING.md`. Key
+> deviations: `_shared/supabase.ts` → `_shared/client.ts`; `share-cleanup/` →
+> `cleanup-expired-shares/` (failed-upload cleanup is inlined into
+> `share-finalize`); `admin-shares` ships `list`/`delete`/`expire` only (manual
+> `create`/`update` were dropped as incompatible with the RLS model). The code
+> blocks below are retained as historical design intent, not literal source.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Harden MiniQR for public production use by moving privileged Supabase operations behind Edge Functions, adding shared upload validation, improving file-sharing UX, tightening deployment docs, and aligning tests with pnpm/Corepack.

@@ -4,6 +4,22 @@
 
 Approved for specification by the project owner on 2026-06-09.
 
+**Implemented (Priority 1) on 2026-06-18.** Verified with `pnpm type-check`,
+`pnpm vitest run` (all tests green), and `eslint` (no new errors).
+
+Final implementation naming differs slightly from the original plan below:
+
+- Service-role client factory: `supabase/functions/_shared/client.ts` (plan: `_shared/supabase.ts`).
+- Cleanup function: `supabase/functions/cleanup-expired-shares/` (plan: `share-cleanup/`).
+  Failed/partial uploads are cleaned up inline by `share-finalize`; the scheduled
+  function additionally reaps expired shares and orphaned `pending`/`failed` records.
+- `admin-shares` exposes `list`, `delete`, and `expire` actions. The planned
+  manual `create`/`update` actions were intentionally dropped — they conflicted
+  with the RLS model (shares are created only via the upload flow).
+- Production schema/policies live in `supabase/migrations/0001_harden_qr_files_log.sql`.
+
+See `SELF_HOSTING.md` → "Optional: File-Sharing Feature (Supabase)" for setup.
+
 ## Goal
 
 Prepare MiniQR for safer public production use while preserving the current product direction: a premium municipal QR generator with QR creation, scanning, and multi-file sharing through Supabase.

@@ -1,4 +1,24 @@
--- Supabase Setup Script for MiniQR File Sharing
+-- ============================================================================
+-- ⚠️ DEPRECATED — DEVELOPMENT/REFERENCE ONLY. DO NOT USE IN PRODUCTION. ⚠️
+-- ============================================================================
+-- This script grants anonymous users INSERT / SELECT / UPDATE / DELETE on both
+-- the qr_files_log table and the qr-files storage bucket. That is unsafe for a
+-- public deployment (anyone could delete or tamper with any share).
+--
+-- The production-hardened setup now lives in:
+--     supabase/migrations/0001_harden_qr_files_log.sql
+--
+-- It adds status/expiry columns, locks RLS so anonymous users can only READ
+-- shares that are `ready` and not expired, moves all privileged writes behind
+-- Edge Functions (share-session, share-finalize, admin-shares,
+-- cleanup-expired-shares), and adds an append-only admin audit log.
+--
+-- See SELF_HOSTING.md → "Optional: File-Sharing Feature (Supabase)" for the
+-- full setup and deployment steps. This file is kept only as a historical
+-- reference of the original development schema.
+-- ============================================================================
+
+-- Supabase Setup Script for MiniQR File Sharing (LEGACY / DEV ONLY)
 
 -- 1. Create the qr_files_log table in public schema
 CREATE TABLE IF NOT EXISTS public.qr_files_log (
