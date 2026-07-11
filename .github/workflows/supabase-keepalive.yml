@@ -1,0 +1,57 @@
+name: Supabase keep-alive
+
+# Supabase pauses free-tier projects after ~7 days without database activity.
+# This workflow pings the database twice a week as a REDUNDANT layer on top of
+# the daily Vercel Cron (/api/keepalive). If the ping fails, GitHub emails the
+# repo owner — which doubles as an outage alert.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL        e.g. https://xxxx.supabase.co
+#   SUPABASE_ANON_KEY   the anon/publishable key
+#   ADMIN_SECRET        (optional) enables expired-share cleanup on each run
+
+on:
+  schedule:
+    # Monday & Thursday 20:00 UTC (อังคาร/ศุกร์ 03:00 เวลาไทย)
+    - cron: '0 20 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping database (resets Supabase inactivity timer)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL / SUPABASE_ANON_KEY secrets are not set"
+            exit 1
+          fi
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/qr_files_log?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "DB ping HTTP status: $status"
+          if [ "$status" -ge 400 ] || [ "$status" -eq 0 ]; then
+            echo "::error::Supabase DB ping failed (HTTP $status) — project may be paused or deleted"
+            exit 1
+          fi
+
+      - name: Clean up expired shares (optional)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "ADMIN_SECRET not set — skipping cleanup step"
+            exit 0
+          fi
+          curl -sf -X POST "$SUPABASE_URL/functions/v1/cleanup-expired-shares" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "x-admin-secret: $ADMIN_SECRET" || {
+              echo "::warning::cleanup-expired-shares call failed (non-fatal)"
+            }

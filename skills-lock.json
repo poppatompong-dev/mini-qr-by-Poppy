@@ -36,6 +36,12 @@
       "skillPath": "plugins/ui-design/skills/responsive-design/SKILL.md",
       "computedHash": "155eff4b1bc8d867ae6bea9900c485ab1081de0b4873c1900adb66bf62466aed"
     },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "19fca56d93a6d212c6373ad921dcaeddf2ff13e3558e6bfd6e63acb063255f86"
+    },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
       "sourceType": "github",
