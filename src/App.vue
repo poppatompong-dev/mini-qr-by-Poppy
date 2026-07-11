@@ -117,7 +117,7 @@ const isModeToggleDisabled = computed(() => {
 </script>
 
 <template>
-  <main class="relative flex min-h-screen flex-col overflow-x-hidden pb-48 md:pb-0">
+  <main class="relative flex min-h-screen flex-col overflow-x-hidden pb-28 md:pb-0">
     <!-- Ambient luxury background mesh -->
     <div class="ambient-luxury-mesh"></div>
 
@@ -463,13 +463,13 @@ const isModeToggleDisabled = computed(() => {
 
     <!-- Main Container -->
     <div
-      class="grid w-full flex-1 place-items-center items-start bg-transparent px-3 py-6 pb-20 pt-24 md:p-8"
+      class="grid w-full flex-1 place-items-center items-start bg-transparent px-3 py-6 pb-16 pt-20 md:p-8"
     >
       <div class="w-full lg:w-5/6">
         <!-- 1. Luxury Hero Section (Visible in Create and Scan Modes) -->
         <section
           v-if="appMode === AppMode.Create || appMode === AppMode.Scan"
-          class="mb-10 text-center md:mb-12"
+          class="mb-6 text-center md:mb-12"
         >
           <!-- Elegant Top Badge -->
           <div
@@ -494,7 +494,7 @@ const isModeToggleDisabled = computed(() => {
 
           <!-- Luxury Typography Heading -->
           <h2
-            class="mt-4 text-3xl font-black tracking-tight text-[var(--text-primary)] sm:text-4xl md:text-5xl"
+            class="mt-3 text-2xl font-black tracking-tight text-[var(--text-primary)] sm:text-4xl md:mt-4 md:text-5xl"
           >
             {{
               t('ระบบสร้างรหัส QR Code และบริการแชร์ไฟล์') ||
@@ -504,7 +504,7 @@ const isModeToggleDisabled = computed(() => {
 
           <!-- Subtle Accent Gold Line -->
           <div
-            class="mx-auto my-4 h-0.5 w-16 rounded bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent"
+            class="mx-auto my-3 h-0.5 w-16 rounded bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent md:my-4"
           ></div>
 
           <!-- Professional Subtext -->
@@ -520,10 +520,10 @@ const isModeToggleDisabled = computed(() => {
           </p>
 
           <!-- Quick Actions Grid -->
-          <div class="mt-6 flex flex-wrap justify-center gap-3">
+          <div class="mt-5 flex flex-wrap justify-center gap-3 md:mt-6">
             <button
               @click="setAppMode(AppMode.Create)"
-              class="btn-gold-gradient flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-md hover:scale-105 active:scale-95"
+              class="btn-gold-gradient flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold shadow-md hover:scale-105 active:scale-95 md:px-7 md:py-3"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -542,7 +542,7 @@ const isModeToggleDisabled = computed(() => {
             </button>
             <button
               @click="setAppMode(AppMode.Scan)"
-              class="btn-gold-outline flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-sm hover:scale-105 active:scale-95"
+              class="btn-gold-outline flex items-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold shadow-sm hover:scale-105 active:scale-95 md:px-7 md:py-3"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

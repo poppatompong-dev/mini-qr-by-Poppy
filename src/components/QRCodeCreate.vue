@@ -82,7 +82,7 @@ import {
   type ErrorCorrectionLevel,
   type Options as StyledQRCodeProps
 } from '@/lib/qr-code'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import 'vue-i18n'
 import { useI18n } from 'vue-i18n'
 
@@ -1333,6 +1333,23 @@ async function generateBatchQRCodes(format: 'png' | 'svg' | 'jpg') {
 
 const activeStyleTab = ref('datatype')
 
+// Jump from the preview panel straight to the frame settings: switch to the
+// frame tab, close the mobile drawer, and scroll the section into view.
+const goToFrameSettings = () => {
+  showFrame.value = true
+  activeStyleTab.value = 'eyestyle'
+  isMobileExportDrawerOpen.value = false
+  // Wait for the vaul drawer to fully close and release its body scroll lock
+  // before scrolling, otherwise scrollIntoView is silently swallowed.
+  nextTick(() => {
+    setTimeout(() => {
+      document
+        .getElementById('frame-setup-section')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 600)
+  })
+}
+
 // One-line orientation per tab so first-time users know what each tab does
 // and that everything after the first tab is optional.
 const activeTabDescription = computed(() => {
@@ -1617,18 +1634,20 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         id="drawer-preview-container"
         class="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-zinc-200 bg-white/95 shadow-2xl outline-none backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
       >
-        <div class="flex flex-col items-center pb-2">
-          <div class="mt-2.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
-          <div :class="['flex w-full justify-center', showFrame ? 'py-1' : 'py-2']">
+        <!-- Compact bar: a small live thumbnail + call to action, so the
+             drawer trigger no longer swallows a third of the mobile screen. -->
+        <div class="flex flex-col items-center pb-2.5">
+          <div class="mt-2 h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+          <div class="flex w-full items-center gap-3 px-4 pt-1.5">
             <div
               :class="[
-                'border-zinc-150/80 flex items-center justify-center rounded-2xl border bg-white p-3 shadow-sm',
-                !showFrame && 'origin-center scale-[0.85]',
+                'border-zinc-150/80 shrink-0 rounded-xl border bg-white p-1.5 shadow-sm',
                 { 'qr-pulse-entrance': isQRAnimating }
               ]"
             >
-              <FitScaleBox v-if="showFrame" :viewport-margin="32" :max-height="150">
+              <FitScaleBox :max-width="56" :max-height="56" :viewport-margin="0">
                 <QRCodeFrame
+                  v-if="showFrame"
                   :frame-text="frameText"
                   :text-position="frameTextPosition"
                   :frame-style="frameStyle"
@@ -1671,9 +1690,7 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     </div>
                   </template>
                 </QRCodeFrame>
-              </FitScaleBox>
-              <template v-else>
-                <div class="grid place-items-center">
+                <div v-else class="grid place-items-center">
                   <div
                     class="grid place-items-center overflow-hidden"
                     :style="[
@@ -1695,22 +1712,31 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     />
                   </div>
                 </div>
-              </template>
+              </FitScaleBox>
             </div>
-          </div>
-          <div class="flex items-center gap-1.5 text-xs font-bold text-zinc-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
+            <div class="min-w-0 flex-1 text-start">
+              <p class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('Export') }}
+              </p>
+              <p class="text-[10px] text-zinc-500 dark:text-zinc-400">
+                {{ t('แตะเพื่อดูตัวอย่างเต็มและบันทึกรูปภาพ') }}
+              </p>
+            </div>
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
             >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
-            <span>{{ t('Export') }}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+            </div>
           </div>
         </div>
       </DrawerTrigger>
@@ -2620,13 +2646,50 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </div>
 
           <!-- Frame Setup -->
-          <div class="dark:border-zinc-850 border-b border-zinc-100 pb-4">
-            <div class="mb-3 flex items-center gap-2">
-              <input id="show-frame" type="checkbox" v-model="showFrame" />
-              <label for="show-frame" class="text-xs font-bold text-zinc-700 dark:text-zinc-300">{{
-                t('Add frame')
-              }}</label>
-            </div>
+          <div id="frame-setup-section" class="dark:border-zinc-850 border-b border-zinc-100 pb-4">
+            <label
+              for="show-frame"
+              :class="[
+                'mb-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3.5 transition-colors',
+                showFrame
+                  ? 'border-[#d4af37]/50 bg-[#d4af37]/10'
+                  : 'border-zinc-200 bg-zinc-50/50 hover:border-[#d4af37]/40 dark:border-zinc-800 dark:bg-zinc-900/40'
+              ]"
+            >
+              <span class="flex min-w-0 items-center gap-2.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="shrink-0 text-amber-600 dark:text-[#d4af37]"
+                >
+                  <line x1="22" y1="6" x2="2" y2="6" />
+                  <line x1="22" y1="18" x2="2" y2="18" />
+                  <line x1="6" y1="2" x2="6" y2="22" />
+                  <line x1="18" y1="2" x2="18" y2="22" />
+                </svg>
+                <span class="flex min-w-0 flex-col">
+                  <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    {{ t('ใส่กรอบพร้อมข้อความกำกับ (Add Frame)') }}
+                  </span>
+                  <span class="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {{ t('เพิ่มข้อความบน-ล่าง เช่น "สแกนเพื่อดาวน์โหลดเอกสาร" ให้ QR ของคุณ') }}
+                  </span>
+                </span>
+              </span>
+              <input
+                id="show-frame"
+                type="checkbox"
+                v-model="showFrame"
+                class="size-4 shrink-0 rounded accent-[#b8860b]"
+              />
+            </label>
 
             <fieldset v-if="showFrame" class="space-y-3">
               <legend class="sr-only">{{ t('Caption') }}</legend>
@@ -3275,6 +3338,40 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Frame quick toggle: the most-wanted decoration, one tap from the preview -->
+        <div
+          :class="[
+            'mb-4 flex w-full items-center justify-between gap-2 rounded-xl border p-3 transition-colors',
+            showFrame
+              ? 'border-[#d4af37]/50 bg-[#d4af37]/10'
+              : 'border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40'
+          ]"
+        >
+          <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              v-model="showFrame"
+              class="size-4 shrink-0 rounded accent-[#b8860b]"
+            />
+            <span class="flex min-w-0 flex-col text-start">
+              <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {{ t('ใส่กรอบพร้อมข้อความ') }}
+              </span>
+              <span class="truncate text-[10px] text-zinc-500 dark:text-zinc-400">
+                {{ t('เพิ่มข้อความกำกับ เช่น "สแกนที่นี่" รอบ QR') }}
+              </span>
+            </span>
+          </label>
+          <button
+            v-if="showFrame"
+            type="button"
+            @click="goToFrameSettings"
+            class="shrink-0 rounded-lg border border-[#d4af37]/60 bg-white px-2.5 py-1.5 text-[11px] font-bold text-amber-700 shadow-sm outline-none transition-all hover:bg-amber-50 active:scale-[0.97] dark:bg-zinc-900 dark:text-[#d4af37] dark:hover:bg-amber-950/30"
+          >
+            {{ t('แต่งกรอบ') }} →
+          </button>
         </div>
 
         <!-- Export Actions Grid -->

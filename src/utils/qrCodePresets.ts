@@ -352,10 +352,14 @@ const envPresets = parsePresetsFromEnv(import.meta.env.VITE_QR_CODE_PRESETS)
 export const allQrCodePresets: Preset[] = envPresets ?? builtInPresets
 
 const defaultPresetName = import.meta.env.VITE_DEFAULT_PRESET
+// 'Plain' is displayed in the UI as "คลาสสิก" (Classic) and is the house
+// default style, regardless of whether VITE_DEFAULT_PRESET is configured.
+const classicPreset =
+  allQrCodePresets.find((p) => p.name.toLowerCase() === 'plain') ?? allQrCodePresets[0]
 export const defaultPreset: Preset = defaultPresetName
   ? (allQrCodePresets.find((p) => p.name.toLowerCase() === defaultPresetName.toLowerCase()) ??
-    allQrCodePresets[0])
-  : allQrCodePresets[0]
+    classicPreset)
+  : classicPreset
 
 /**
  * Logo image URLs are looser than frame background images
