@@ -19,8 +19,24 @@ const capturedData = ref<string>('')
 const qrCodeScanRef = ref<InstanceType<typeof QRCodeScan> | null>(null)
 const showUserGuide = ref(false)
 const isAdminHistoryOpen = ref(false)
+
+// Open the guide automatically on first visit so newcomers see the 4-step
+// walkthrough without discovering the "?" button first.
+const GUIDE_SEEN_STORAGE_KEY = 'mini-qr:guide-seen'
+const markGuideSeen = () => {
+  try {
+    localStorage.setItem(GUIDE_SEEN_STORAGE_KEY, '1')
+  } catch {
+    /* private mode or storage disabled */
+  }
+}
 const toggleUserGuide = () => {
   showUserGuide.value = !showUserGuide.value
+  markGuideSeen()
+}
+const dismissUserGuide = () => {
+  showUserGuide.value = false
+  markGuideSeen()
 }
 
 // #region Scroll-aware header
@@ -55,6 +71,12 @@ onMounted(() => {
   if (idParam) {
     shareId.value = idParam
     appMode.value = AppMode.Share
+  } else {
+    try {
+      if (!localStorage.getItem(GUIDE_SEEN_STORAGE_KEY)) showUserGuide.value = true
+    } catch {
+      /* private mode or storage disabled */
+    }
   }
 })
 
@@ -106,17 +128,33 @@ const isModeToggleDisabled = computed(() => {
       <div class="flex items-center gap-6">
         <!-- Logo -->
         <div class="flex items-center gap-3">
-          <span class="border-[var(--accent-gold)]/30 flex size-9 items-center justify-center rounded-lg border bg-[var(--primary)] text-[10px] font-extrabold tracking-wider text-[var(--primary-foreground)] shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-[var(--accent-gold)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <span
+            class="border-[var(--accent-gold)]/30 flex size-9 items-center justify-center rounded-lg border bg-[var(--primary)] text-[10px] font-extrabold tracking-wider text-[var(--primary-foreground)] shadow-md"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="size-4 text-[var(--accent-gold)]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </span>
           <div class="flex flex-col items-start leading-none">
             <div class="flex items-center gap-2">
               <h1 class="text-xl font-bold tracking-tight text-[var(--text-primary)]">MiniQR</h1>
-              <span class="bg-[var(--accent-gold)]/10 border-[var(--accent-gold)]/30 rounded border px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-[var(--accent-gold)]">GOV PRO</span>
+              <span
+                class="bg-[var(--accent-gold)]/10 border-[var(--accent-gold)]/30 rounded border px-1.5 py-0.5 text-[7px] font-bold tracking-widest text-[var(--accent-gold)]"
+                >GOV PRO</span
+              >
             </div>
-            <span class="text-zinc-550 mt-1 text-[9px] font-medium dark:text-zinc-400">เทศบาลนครนครสวรรค์ (Nakhon Sawan Municipality)</span>
+            <span class="text-zinc-550 mt-1 text-[9px] font-medium dark:text-zinc-400"
+              >เทศบาลนครนครสวรรค์ (Nakhon Sawan Municipality)</span
+            >
           </div>
         </div>
 
@@ -145,7 +183,20 @@ const isModeToggleDisabled = computed(() => {
             :disabled="isModeToggleDisabled"
             :aria-label="t('Switch to Create Mode')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
             <span>{{ t('Create') }}</span>
           </button>
           <button
@@ -159,7 +210,22 @@ const isModeToggleDisabled = computed(() => {
             :disabled="isModeToggleDisabled"
             :aria-label="t('Switch to Scan Mode')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+              />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
             <span>{{ t('Scan') }}</span>
           </button>
         </div>
@@ -180,17 +246,29 @@ const isModeToggleDisabled = computed(() => {
         <!-- User Guide Toggle Button -->
         <button
           class="grid size-9 place-items-center rounded-xl border outline-none transition-all duration-300 hover:scale-105 active:scale-[0.95]"
-          :class="showUserGuide 
-            ? 'border-[var(--accent-gold)] text-[var(--accent-gold)] bg-[var(--accent-gold)]/10' 
-            : 'border-[var(--border-zinc)] bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200'"
+          :class="
+            showUserGuide
+              ? 'bg-[var(--accent-gold)]/10 border-[var(--accent-gold)] text-[var(--accent-gold)]'
+              : 'border-[var(--border-zinc)] bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200'
+          "
           @click="toggleUserGuide"
           :title="t('User Guide')"
           :aria-label="t('User Guide')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
         </button>
 
@@ -200,13 +278,58 @@ const isModeToggleDisabled = computed(() => {
           :aria-label="t('Toggle dark mode')"
         >
           <span v-if="isDarkModePreferenceSetBySystem">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v20"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2v20" />
+            </svg>
           </span>
           <span v-if="!isDarkModePreferenceSetBySystem && isDarkMode">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
           </span>
           <span v-if="!isDarkModePreferenceSetBySystem && !isDarkMode">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m6.34 17.66-1.41 1.41" />
+              <path d="m19.07 4.93-1.41 1.41" />
+            </svg>
           </span>
         </button>
         <LanguageSelector />
@@ -223,7 +346,9 @@ const isModeToggleDisabled = computed(() => {
           class="duration-350 relative flex items-center gap-1.5 rounded-xl border border-[var(--border-zinc)] bg-white/95 p-1.5 shadow-lg backdrop-blur-md transition-all dark:bg-zinc-900/95"
         >
           <!-- Switcher buttons container with sliding pill -->
-          <div class="relative flex w-[146px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40">
+          <div
+            class="relative flex w-[146px] items-center gap-0.5 rounded-lg bg-zinc-100/50 p-0.5 dark:bg-zinc-800/40"
+          >
             <div
               class="duration-350 border-[var(--accent-gold)]/20 absolute inset-y-0.5 rounded-[6px] border bg-[var(--primary)] shadow-sm transition-all"
               :style="{
@@ -245,7 +370,20 @@ const isModeToggleDisabled = computed(() => {
               :disabled="isModeToggleDisabled"
               :aria-label="t('Switch to Create Mode')"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                :width="isHeaderCollapsed ? 12 : 14"
+                :height="isHeaderCollapsed ? 12 : 14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
               <span>{{ t('Create') }}</span>
             </button>
             <button
@@ -260,7 +398,22 @@ const isModeToggleDisabled = computed(() => {
               :disabled="isModeToggleDisabled"
               :aria-label="t('Switch to Scan Mode')"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" :width="isHeaderCollapsed ? 12 : 14" :height="isHeaderCollapsed ? 12 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                :width="isHeaderCollapsed ? 12 : 14"
+                :height="isHeaderCollapsed ? 12 : 14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
               <span>{{ t('Scan') }}</span>
             </button>
           </div>
@@ -268,17 +421,29 @@ const isModeToggleDisabled = computed(() => {
           <!-- Mobile User Guide Toggle Button -->
           <button
             class="grid size-7 place-items-center rounded-lg border outline-none transition-all duration-300 active:scale-[0.95]"
-            :class="showUserGuide 
-              ? 'border-[var(--accent-gold)] text-[var(--accent-gold)] bg-[var(--accent-gold)]/10' 
-              : 'border-[var(--border-zinc)] bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200'"
+            :class="
+              showUserGuide
+                ? 'bg-[var(--accent-gold)]/10 border-[var(--accent-gold)] text-[var(--accent-gold)]'
+                : 'border-[var(--border-zinc)] bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200'
+            "
             @click="toggleUserGuide"
             :title="t('User Guide')"
             :aria-label="t('User Guide')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </button>
 
@@ -302,29 +467,56 @@ const isModeToggleDisabled = computed(() => {
     >
       <div class="w-full lg:w-5/6">
         <!-- 1. Luxury Hero Section (Visible in Create and Scan Modes) -->
-        <section 
+        <section
           v-if="appMode === AppMode.Create || appMode === AppMode.Scan"
           class="mb-10 text-center md:mb-12"
         >
           <!-- Elegant Top Badge -->
-          <div class="border-[var(--accent-gold)]/35 bg-[var(--accent-gold)]/5 dark:bg-[var(--accent-gold)]/10 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-gold)] shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          <div
+            class="border-[var(--accent-gold)]/35 bg-[var(--accent-gold)]/5 dark:bg-[var(--accent-gold)]/10 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-gold)] shadow-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="size-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            <span>{{ t('ระบบประมวลผลบนบราวเซอร์ ปลอดภัยและเป็นความลับ') || 'ระบบประมวลผลบนบราวเซอร์ ปลอดภัยและเป็นความลับ' }}</span>
+            <span>{{
+              t('ระบบประมวลผลบนบราวเซอร์ ปลอดภัยและเป็นความลับ') ||
+              'ระบบประมวลผลบนบราวเซอร์ ปลอดภัยและเป็นความลับ'
+            }}</span>
           </div>
 
           <!-- Luxury Typography Heading -->
-          <h2 class="mt-4 text-3xl font-black tracking-tight text-[var(--text-primary)] sm:text-4xl md:text-5xl">
-            {{ t('ระบบสร้างรหัส QR Code และบริการแชร์ไฟล์') || 'ระบบสร้างรหัส QR Code และบริการแชร์ไฟล์' }}
+          <h2
+            class="mt-4 text-3xl font-black tracking-tight text-[var(--text-primary)] sm:text-4xl md:text-5xl"
+          >
+            {{
+              t('ระบบสร้างรหัส QR Code และบริการแชร์ไฟล์') ||
+              'ระบบสร้างรหัส QR Code และบริการแชร์ไฟล์'
+            }}
           </h2>
-          
+
           <!-- Subtle Accent Gold Line -->
-          <div class="mx-auto my-4 h-0.5 w-16 rounded bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent"></div>
+          <div
+            class="mx-auto my-4 h-0.5 w-16 rounded bg-gradient-to-r from-transparent via-[var(--accent-gold)] to-transparent"
+          ></div>
 
           <!-- Professional Subtext -->
-          <p class="text-zinc-550 mx-auto max-w-2xl text-sm leading-relaxed dark:text-zinc-400 sm:text-base">
-            {{ t('พัฒนาขึ้นอย่างเป็นทางการสำหรับบุคลากรหน่วยงานและประชาชน เพื่อความน่าเชื่อถือ รวดเร็ว และเป็นมืออาชีพ มั่นใจในระบบการบีบอัดไฟล์และส่งข้อมูลสาธารณะ') || 'พัฒนาขึ้นอย่างเป็นทางการสำหรับบุคลากรหน่วยงานและประชาชน เพื่อความน่าเชื่อถือ รวดเร็ว และเป็นมืออาชีพ มั่นใจในระบบการบีบอัดไฟล์และส่งข้อมูลสาธารณะ' }}
+          <p
+            class="text-zinc-550 mx-auto max-w-2xl text-sm leading-relaxed dark:text-zinc-400 sm:text-base"
+          >
+            {{
+              t(
+                'พัฒนาขึ้นอย่างเป็นทางการสำหรับบุคลากรหน่วยงานและประชาชน เพื่อความน่าเชื่อถือ รวดเร็ว และเป็นมืออาชีพ มั่นใจในระบบการบีบอัดไฟล์และส่งข้อมูลสาธารณะ'
+              ) ||
+              'พัฒนาขึ้นอย่างเป็นทางการสำหรับบุคลากรหน่วยงานและประชาชน เพื่อความน่าเชื่อถือ รวดเร็ว และเป็นมืออาชีพ มั่นใจในระบบการบีบอัดไฟล์และส่งข้อมูลสาธารณะ'
+            }}
           </p>
 
           <!-- Quick Actions Grid -->
@@ -333,14 +525,40 @@ const isModeToggleDisabled = computed(() => {
               @click="setAppMode(AppMode.Create)"
               class="btn-gold-gradient flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-md hover:scale-105 active:scale-95"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
               <span>สร้าง QR</span>
             </button>
             <button
               @click="setAppMode(AppMode.Scan)"
               class="btn-gold-outline flex items-center gap-2 rounded-xl px-7 py-3 text-xs font-bold shadow-sm hover:scale-105 active:scale-95"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
               <span>สแกน</span>
             </button>
           </div>
@@ -349,7 +567,11 @@ const isModeToggleDisabled = computed(() => {
         <!-- 2. Conditional Rendering for Main Functional Area -->
         <div class="w-full">
           <div v-if="appMode === AppMode.Create">
-            <QRCodeCreate :initial-data="capturedData" :show-user-guide="showUserGuide" />
+            <QRCodeCreate
+              :initial-data="capturedData"
+              :show-user-guide="showUserGuide"
+              @dismiss-guide="dismissUserGuide"
+            />
           </div>
           <div v-else-if="appMode === AppMode.Share && shareId">
             <FileShareView :share-id="shareId" />
@@ -360,7 +582,7 @@ const isModeToggleDisabled = computed(() => {
         </div>
 
         <!-- 3. Government / Agency Presentation Section -->
-        <section 
+        <section
           v-if="appMode === AppMode.Create || appMode === AppMode.Scan"
           class="mt-14 border-t border-[var(--border-zinc)] pt-12 text-center md:mt-20"
         >
@@ -368,40 +590,110 @@ const isModeToggleDisabled = computed(() => {
             {{ t('ความปลอดภัยและบริการสาธารณะดิจิทัล') || 'ความปลอดภัยและบริการสาธารณะดิจิทัล' }}
           </h3>
           <h4 class="mt-2 text-2xl font-black text-[var(--text-primary)]">
-            {{ t('ทำไมบุคลากรภาครัฐจึงเลือกใช้งานระบบ MiniQR Pro') || 'ทำไมบุคลากรภาครัฐจึงเลือกใช้งานระบบ MiniQR Pro' }}
+            {{
+              t('ทำไมบุคลากรภาครัฐจึงเลือกใช้งานระบบ MiniQR Pro') ||
+              'ทำไมบุคลากรภาครัฐจึงเลือกใช้งานระบบ MiniQR Pro'
+            }}
           </h4>
-          
+
           <div class="mt-8 grid grid-cols-1 gap-6 text-left md:grid-cols-3">
             <!-- Card 1 -->
-            <div class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30">
-              <div class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-[var(--accent-gold)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div
+              class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30"
+            >
+              <div
+                class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="size-5 text-[var(--accent-gold)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
               </div>
-              <h5 class="text-sm font-bold text-[var(--text-primary)]">{{ t('ความปลอดภัยระดับสูง (Client-Side)') || 'ความปลอดภัยระดับสูง (Client-Side)' }}</h5>
+              <h5 class="text-sm font-bold text-[var(--text-primary)]">
+                {{ t('ความปลอดภัยระดับสูง (Client-Side)') || 'ความปลอดภัยระดับสูง (Client-Side)' }}
+              </h5>
               <p class="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {{ t('การประมวลผลข้อมูล QR ทั้งหมดทำบนเว็บบราวเซอร์ของผู้ใช้โดยตรง ปลอดภัยจากการดักจับข้อมูลและการรั่วไหลของเอกสารราชการ') || 'การประมวลผลข้อมูล QR ทั้งหมดทำบนเว็บบราวเซอร์ของผู้ใช้โดยตรง ปลอดภัยจากการดักจับข้อมูลและการรั่วไหลของเอกสารราชการ' }}
+                {{
+                  t(
+                    'การประมวลผลข้อมูล QR ทั้งหมดทำบนเว็บบราวเซอร์ของผู้ใช้โดยตรง ปลอดภัยจากการดักจับข้อมูลและการรั่วไหลของเอกสารราชการ'
+                  ) ||
+                  'การประมวลผลข้อมูล QR ทั้งหมดทำบนเว็บบราวเซอร์ของผู้ใช้โดยตรง ปลอดภัยจากการดักจับข้อมูลและการรั่วไหลของเอกสารราชการ'
+                }}
               </p>
             </div>
 
             <!-- Card 2 -->
-            <div class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30">
-              <div class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-[var(--accent-gold)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <div
+              class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30"
+            >
+              <div
+                class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="size-5 text-[var(--accent-gold)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                  />
+                </svg>
               </div>
-              <h5 class="text-sm font-bold text-[var(--text-primary)]">{{ t('บีบอัดและแชร์ไฟล์ (Zipped Files)') || 'บีบอัดและแชร์ไฟล์ (Zipped Files)' }}</h5>
+              <h5 class="text-sm font-bold text-[var(--text-primary)]">
+                {{ t('บีบอัดและแชร์ไฟล์ (Zipped Files)') || 'บีบอัดและแชร์ไฟล์ (Zipped Files)' }}
+              </h5>
               <p class="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {{ t('แนบเอกสารราชการได้หลายไฟล์พร้อมกัน ระบบจะทำการรวมไฟล์และบีบอัดเป็น ZIP อัตโนมัติ เพื่อนำไปแชร์ผ่านรหัส QR เพียงโค้ดเดียว') || 'แนบเอกสารราชการได้หลายไฟล์พร้อมกัน ระบบจะทำการรวมไฟล์และบีบอัดเป็น ZIP อัตโนมัติ เพื่อนำไปแชร์ผ่านรหัส QR เพียงโค้ดเดียว' }}
+                {{
+                  t(
+                    'แนบเอกสารราชการได้หลายไฟล์พร้อมกัน ระบบจะทำการรวมไฟล์และบีบอัดเป็น ZIP อัตโนมัติ เพื่อนำไปแชร์ผ่านรหัส QR เพียงโค้ดเดียว'
+                  ) ||
+                  'แนบเอกสารราชการได้หลายไฟล์พร้อมกัน ระบบจะทำการรวมไฟล์และบีบอัดเป็น ZIP อัตโนมัติ เพื่อนำไปแชร์ผ่านรหัส QR เพียงโค้ดเดียว'
+                }}
               </p>
             </div>
 
             <!-- Card 3 -->
-            <div class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30">
-              <div class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5 text-[var(--accent-gold)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <div
+              class="rounded-xl border border-[var(--border-zinc)] bg-white/50 p-6 shadow-sm dark:bg-zinc-900/30"
+            >
+              <div
+                class="mb-4 flex size-10 items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="size-5 text-[var(--accent-gold)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <line x1="4" y1="22" x2="4" y2="15" />
+                </svg>
               </div>
-              <h5 class="text-sm font-bold text-[var(--text-primary)]">{{ t('ออกแบบสำหรับงานนำเสนอ (Official Custom)') || 'ออกแบบสำหรับงานนำเสนอ (Official Custom)' }}</h5>
+              <h5 class="text-sm font-bold text-[var(--text-primary)]">
+                {{
+                  t('ออกแบบสำหรับงานนำเสนอ (Official Custom)') ||
+                  'ออกแบบสำหรับงานนำเสนอ (Official Custom)'
+                }}
+              </h5>
               <p class="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {{ t('ปรับแต่งรูปแบบจุด สีสัน ขอบมุม ใส่โลโก้ หรือข้อความประชาสัมพันธ์ใต้กรอบ เพื่อความน่าเชื่อถือ สุภาพ และเป็นระเบียบตามระเบียบสารบรรณ') || 'ปรับแต่งรูปแบบจุด สีสัน ขอบมุม ใส่โลโก้ หรือข้อความประชาสัมพันธ์ใต้กรอบ เพื่อความน่าเชื่อถือ สุภาพ และเป็นระเบียบตามระเบียบสารบรรณ' }}
+                {{
+                  t(
+                    'ปรับแต่งรูปแบบจุด สีสัน ขอบมุม ใส่โลโก้ หรือข้อความประชาสัมพันธ์ใต้กรอบ เพื่อความน่าเชื่อถือ สุภาพ และเป็นระเบียบตามระเบียบสารบรรณ'
+                  ) ||
+                  'ปรับแต่งรูปแบบจุด สีสัน ขอบมุม ใส่โลโก้ หรือข้อความประชาสัมพันธ์ใต้กรอบ เพื่อความน่าเชื่อถือ สุภาพ และเป็นระเบียบตามระเบียบสารบรรณ'
+                }}
               </p>
             </div>
           </div>

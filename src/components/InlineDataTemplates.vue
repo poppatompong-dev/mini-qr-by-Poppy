@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isSupabaseConfigured } from '@/utils/supabase'
-import { createShareWithFiles, ShareApiError } from '@/utils/shareApi'
+import { createShareWithFiles, ShareApiError, checkShareServiceReachable } from '@/utils/shareApi'
 import {
   validateFileManifest,
   mapShareErrorMessage,
@@ -115,7 +115,35 @@ interface UploadableFile {
 const filesToUpload = ref<UploadableFile[]>([])
 const uploading = ref(false)
 const uploadError = ref('')
+const uploadErrorCode = ref('')
 const filesInputRef = ref<HTMLInputElement | null>(null)
+
+// Reachability of the Supabase project backing the file share feature.
+// A paused/deleted project fails at the DNS level, so we probe once when the
+// user opens the files tab and warn before they fill in the whole form.
+const shareServiceStatus = ref<'unknown' | 'checking' | 'online' | 'offline'>('unknown')
+
+const checkShareService = async () => {
+  if (!isSupabaseConfigured || shareServiceStatus.value === 'checking') return
+  shareServiceStatus.value = 'checking'
+  shareServiceStatus.value = (await checkShareServiceReachable()) ? 'online' : 'offline'
+}
+
+const dismissUploadError = () => {
+  uploadError.value = ''
+  // Re-probe so the offline banner reflects the current server state before
+  // the user retries a doomed upload.
+  if (uploadErrorCode.value === 'SERVICE_UNREACHABLE') checkShareService()
+  uploadErrorCode.value = ''
+}
+
+watch(
+  selectedType,
+  (type) => {
+    if (type === 'files' && shareServiceStatus.value !== 'online') checkShareService()
+  },
+  { immediate: true }
+)
 
 // Custom note and custom ZIP name state
 const showNoteEditor = ref(false)
@@ -170,6 +198,7 @@ const resetUploadState = () => {
   uploadSuccess.value = false
   uploadedShareUrl.value = ''
   uploadError.value = ''
+  uploadErrorCode.value = ''
   privacyAccepted.value = false
   triggerDataGeneration()
 }
@@ -554,11 +583,13 @@ const handleFileUploadWorkflow = async () => {
   const validation = validateFileManifest(files)
   if (!validation.ok) {
     uploadError.value = mapShareErrorMessage(validation.code, validation.filename)
+    uploadErrorCode.value = validation.code
     return
   }
 
   uploading.value = true
   uploadError.value = ''
+  uploadErrorCode.value = ''
   uploadSuccess.value = false
   uploadProgressPercent.value = 0
 
@@ -594,8 +625,11 @@ const handleFileUploadWorkflow = async () => {
     console.error('File upload failed:', err)
     if (err instanceof ShareApiError) {
       uploadError.value = mapShareErrorMessage(err.code, err.filename) || err.message
+      uploadErrorCode.value = err.code
+      if (err.code === 'SERVICE_UNREACHABLE') shareServiceStatus.value = 'offline'
     } else {
       uploadError.value = t('การอัปโหลดล้มเหลว กรุณาลองใหม่อีกครั้ง')
+      uploadErrorCode.value = 'UNKNOWN'
     }
   } finally {
     uploading.value = false
@@ -649,6 +683,7 @@ watch(
 // Watch selectedType to trigger updates
 watch(selectedType, () => {
   uploadError.value = ''
+  uploadErrorCode.value = ''
   triggerDataGeneration()
 })
 
@@ -1184,6 +1219,36 @@ const categories = [
         </div>
 
         <div v-else class="space-y-3.5">
+          <!-- Service offline warning (shown before the user invests time in the form) -->
+          <div
+            v-if="shareServiceStatus === 'offline' && !uploading && !uploadSuccess && !uploadError"
+            class="rounded-xl border border-red-200 bg-red-50 p-4 text-xs dark:border-red-900/40 dark:bg-red-950/20"
+          >
+            <div class="flex gap-2.5">
+              <AlertCircle class="size-5 shrink-0 text-red-500" />
+              <div class="flex-1">
+                <p class="font-bold text-red-700 dark:text-red-400">
+                  ระบบฝากไฟล์ไม่พร้อมใช้งานในขณะนี้
+                </p>
+                <p class="mt-1 leading-relaxed text-zinc-600 dark:text-zinc-300">
+                  เชื่อมต่อเซิร์ฟเวอร์จัดเก็บไฟล์ไม่ได้ โปรเจกต์ Supabase
+                  อาจถูกระงับชั่วคราวหรือถูกลบ หากคุณเป็นผู้ดูแลเว็บไซต์ กรุณาเข้า Supabase
+                  Dashboard เพื่อกู้คืน (Restore) โปรเจกต์ หรือตรวจสอบค่า
+                  <code class="rounded bg-red-100 px-1 font-mono dark:bg-red-900/40"
+                    >VITE_SUPABASE_URL</code
+                  >
+                </p>
+                <button
+                  type="button"
+                  @click="checkShareService"
+                  class="mt-2.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 font-semibold text-red-700 outline-none hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-900/30"
+                >
+                  ตรวจสอบการเชื่อมต่ออีกครั้ง
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- State A: Uploading Progress -->
           <div
             v-if="uploading"
@@ -1334,8 +1399,36 @@ const categories = [
               </p>
             </div>
 
-            <!-- Recommendations / Troubleshooting -->
+            <!-- Recommendations / Troubleshooting (matched to the actual error) -->
             <div
+              v-if="uploadErrorCode === 'SERVICE_UNREACHABLE'"
+              class="text-zinc-650 dark:text-zinc-350 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-[10px] dark:border-zinc-800/80 dark:bg-zinc-950/20"
+            >
+              <p class="font-bold text-zinc-700 dark:text-zinc-300">
+                💡 สำหรับผู้ดูแลเว็บไซต์ — เซิร์ฟเวอร์ฝากไฟล์ติดต่อไม่ได้:
+              </p>
+              <ul
+                class="list-decimal space-y-1 pl-4 leading-relaxed text-zinc-600 dark:text-zinc-400"
+              >
+                <li>
+                  โปรเจกต์ Supabase (แผนฟรี) จะถูกระงับอัตโนมัติเมื่อไม่มีการใช้งาน — เข้า Supabase
+                  Dashboard แล้วกด <strong>Restore project</strong>
+                </li>
+                <li>
+                  หากโปรเจกต์ถูกลบไปแล้ว ให้สร้างโปรเจกต์ใหม่ แล้วอัปเดตค่า
+                  <code class="rounded bg-zinc-200 px-1 font-mono dark:bg-zinc-800"
+                    >VITE_SUPABASE_URL</code
+                  >
+                  และ
+                  <code class="rounded bg-zinc-200 px-1 font-mono dark:bg-zinc-800"
+                    >VITE_SUPABASE_ANON_KEY</code
+                  >
+                </li>
+                <li>ผู้ใช้ทั่วไป: ตรวจสอบอินเทอร์เน็ตของคุณ แล้วกดลองใหม่อีกครั้ง</li>
+              </ul>
+            </div>
+            <div
+              v-else-if="uploadErrorCode !== 'UNKNOWN'"
               class="text-zinc-650 dark:text-zinc-350 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 text-[10px] dark:border-zinc-800/80 dark:bg-zinc-950/20"
             >
               <p class="font-bold text-zinc-700 dark:text-zinc-300">
@@ -1360,7 +1453,7 @@ const categories = [
             <div class="flex justify-center">
               <button
                 type="button"
-                @click="uploadError = ''"
+                @click="dismissUploadError"
                 class="flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none hover:bg-blue-700 active:scale-[0.99]"
               >
                 <span>{{ t('ลองใหม่อีกครั้ง') || 'ลองใหม่อีกครั้ง' }}</span>
@@ -1666,6 +1759,12 @@ const categories = [
                 ></div>
                 <span>{{ t('อัปโหลดไฟล์และแชร์เป็นลิงก์ QR') }}</span>
               </button>
+              <p
+                v-if="!privacyAccepted && !uploading"
+                class="text-center text-[10px] text-zinc-400 dark:text-zinc-500"
+              >
+                {{ t('ติ๊กช่องยอมรับด้านบนก่อน จึงจะกดอัปโหลดได้') }}
+              </p>
             </div>
 
             <!-- Note Editor Form Toggle for Empty Queue -->

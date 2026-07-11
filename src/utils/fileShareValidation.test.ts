@@ -42,18 +42,46 @@ describe('fileShareValidation', () => {
 
   it('rejects empty, too many, too large, and blocked file manifests', () => {
     expect(validateFileManifest([])).toEqual({ ok: false, code: 'NO_FILES' })
-    expect(validateFileManifest(Array.from({ length: MAX_FILES_PER_SHARE + 1 }, (_, index) => file(`file-${index}.txt`, 1)))).toEqual({ ok: false, code: 'TOO_MANY_FILES' })
-    expect(validateFileManifest([file('large.txt', MAX_UPLOAD_BYTES + 1)])).toEqual({ ok: false, code: 'TOTAL_SIZE_EXCEEDED' })
-    expect(validateFileManifest([file('run.exe', 1)])).toEqual({ ok: false, code: 'BLOCKED_FILE_TYPE', filename: 'run.exe' })
+    expect(
+      validateFileManifest(
+        Array.from({ length: MAX_FILES_PER_SHARE + 1 }, (_, index) => file(`file-${index}.txt`, 1))
+      )
+    ).toEqual({ ok: false, code: 'TOO_MANY_FILES' })
+    expect(validateFileManifest([file('large.txt', MAX_UPLOAD_BYTES + 1)])).toEqual({
+      ok: false,
+      code: 'TOTAL_SIZE_EXCEEDED'
+    })
+    expect(validateFileManifest([file('run.exe', 1)])).toEqual({
+      ok: false,
+      code: 'BLOCKED_FILE_TYPE',
+      filename: 'run.exe'
+    })
   })
 
   it('builds a collision-safe manifest with storage names', () => {
-    const result = buildSafeFileManifest([file('report.pdf', 10, 'application/pdf'), file('report.pdf', 20, 'application/pdf')])
+    const result = buildSafeFileManifest([
+      file('report.pdf', 10, 'application/pdf'),
+      file('report.pdf', 20, 'application/pdf')
+    ])
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error('manifest should be valid')
     expect(result.files).toEqual([
-      { index: 0, originalName: 'report.pdf', safeName: 'report.pdf', storageName: 'file_0.pdf', size: 10, type: 'application/pdf' },
-      { index: 1, originalName: 'report.pdf', safeName: 'report (1).pdf', storageName: 'file_1.pdf', size: 20, type: 'application/pdf' }
+      {
+        index: 0,
+        originalName: 'report.pdf',
+        safeName: 'report.pdf',
+        storageName: 'file_0.pdf',
+        size: 10,
+        type: 'application/pdf'
+      },
+      {
+        index: 1,
+        originalName: 'report.pdf',
+        safeName: 'report (1).pdf',
+        storageName: 'file_1.pdf',
+        size: 20,
+        type: 'application/pdf'
+      }
     ])
     expect(result.totalSize).toBe(30)
   })
@@ -61,5 +89,6 @@ describe('fileShareValidation', () => {
   it('maps technical codes to Thai user-safe messages', () => {
     expect(mapShareErrorMessage('NO_FILES')).toContain('เลือกไฟล์')
     expect(mapShareErrorMessage('UNKNOWN')).toContain('ลองใหม่')
+    expect(mapShareErrorMessage('SERVICE_UNREACHABLE')).toContain('เซิร์ฟเวอร์')
   })
 })

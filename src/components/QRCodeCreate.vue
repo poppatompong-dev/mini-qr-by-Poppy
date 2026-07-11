@@ -91,6 +91,10 @@ const props = defineProps<{
   showUserGuide?: boolean
 }>()
 
+const emit = defineEmits<{
+  (e: 'dismissGuide'): void
+}>()
+
 const mainContentContainer = ref<HTMLElement | null>(null)
 const isLarge = useMediaQuery('(min-width: 768px)')
 const isLikelyMobileDevice = computed(() => {
@@ -521,11 +525,16 @@ function applyFramePreset(preset: FramePreset, enableFrame = true) {
   if (anyPreset.fontSizeTop !== undefined) frameTextTopSize.value = anyPreset.fontSizeTop
   if (anyPreset.fontSizeBottom !== undefined) frameTextBottomSize.value = anyPreset.fontSizeBottom
   if (anyPreset.textColorTop !== undefined) frameTextTopColor.value = anyPreset.textColorTop || ''
-  if (anyPreset.textColorBottom !== undefined) frameTextBottomColor.value = anyPreset.textColorBottom || ''
-  if (anyPreset.fontWeightTop !== undefined) frameTextTopWeight.value = anyPreset.fontWeightTop || 'normal'
-  if (anyPreset.fontWeightBottom !== undefined) frameTextBottomWeight.value = anyPreset.fontWeightBottom || 'normal'
-  if (anyPreset.fontStyleTop !== undefined) frameTextTopItalic.value = anyPreset.fontStyleTop || 'normal'
-  if (anyPreset.fontStyleBottom !== undefined) frameTextBottomItalic.value = anyPreset.fontStyleBottom || 'normal'
+  if (anyPreset.textColorBottom !== undefined)
+    frameTextBottomColor.value = anyPreset.textColorBottom || ''
+  if (anyPreset.fontWeightTop !== undefined)
+    frameTextTopWeight.value = anyPreset.fontWeightTop || 'normal'
+  if (anyPreset.fontWeightBottom !== undefined)
+    frameTextBottomWeight.value = anyPreset.fontWeightBottom || 'normal'
+  if (anyPreset.fontStyleTop !== undefined)
+    frameTextTopItalic.value = anyPreset.fontStyleTop || 'normal'
+  if (anyPreset.fontStyleBottom !== undefined)
+    frameTextBottomItalic.value = anyPreset.fontStyleBottom || 'normal'
   if (anyPreset.fontFamilyTop !== undefined) {
     frameTextTopFont.value = anyPreset.fontFamilyTop || ''
     if (frameTextTopFont.value) loadFrameFont(frameTextTopFont.value)
@@ -1108,7 +1117,9 @@ function resetBatchExport() {
 }
 
 function resetToDefaultSettings() {
-  const confirmMsg = t('คุณแน่ใจหรือไม่ที่จะล้างการตั้งค่าทั้งหมดกลับเป็นค่าเริ่มต้น?') || 'Are you sure you want to reset all settings to default?'
+  const confirmMsg =
+    t('คุณแน่ใจหรือไม่ที่จะล้างการตั้งค่าทั้งหมดกลับเป็นค่าเริ่มต้น?') ||
+    'Are you sure you want to reset all settings to default?'
   if (!window.confirm(confirmMsg)) return
 
   // 1. Clear stored localStorage config
@@ -1322,6 +1333,23 @@ async function generateBatchQRCodes(format: 'png' | 'svg' | 'jpg') {
 
 const activeStyleTab = ref('datatype')
 
+// One-line orientation per tab so first-time users know what each tab does
+// and that everything after the first tab is optional.
+const activeTabDescription = computed(() => {
+  switch (activeStyleTab.value) {
+    case 'datatype':
+      return t('ขั้นแรก: เลือกประเภทและใส่เนื้อหาที่ต้องการให้ QR เปิด เช่น ลิงก์ ข้อความ หรือไฟล์')
+    case 'style':
+      return t('ปรับสีพื้นหลังและลวดลายจุดของ QR ตามต้องการ (ไม่บังคับ)')
+    case 'eyestyle':
+      return t('ตกแต่งหัวอ่านทั้งสามมุม และใส่กรอบพร้อมข้อความกำกับ (ไม่บังคับ)')
+    case 'logo':
+      return t('ใส่โลโก้หน่วยงานไว้กลาง QR (ไม่บังคับ)')
+    default:
+      return ''
+  }
+})
+
 const activeTabLeft = computed(() => {
   switch (activeStyleTab.value) {
     case 'datatype':
@@ -1397,10 +1425,14 @@ const decodedDataMeta = computed(() => {
       details: [
         { label: t('SSID / ชื่อเครือข่าย') || 'SSID / ชื่อเครือข่าย', value: ssid },
         { label: t('ระบบความปลอดภัย') || 'ระบบความปลอดภัย', value: enc },
-        { label: t('รหัสผ่าน') || 'รหัสผ่าน', value: pass ? '••••••••' : t('ไม่มีรหัสผ่าน') || 'ไม่มีรหัสผ่าน' }
+        {
+          label: t('รหัสผ่าน') || 'รหัสผ่าน',
+          value: pass ? '••••••••' : t('ไม่มีรหัสผ่าน') || 'ไม่มีรหัสผ่าน'
+        }
       ],
       icon: Wifi,
-      color: 'border-emerald-200/50 bg-emerald-50/10 text-emerald-600 dark:border-emerald-900/30 dark:bg-emerald-950/5'
+      color:
+        'border-emerald-200/50 bg-emerald-50/10 text-emerald-600 dark:border-emerald-900/30 dark:bg-emerald-950/5'
     }
   }
 
@@ -1426,7 +1458,8 @@ const decodedDataMeta = computed(() => {
         { label: t('หัวข้อ') || 'หัวข้อ', value: sub || t('ไม่มีหัวข้อ') || 'ไม่มีหัวข้อ' }
       ],
       icon: Mail,
-      color: 'border-cyan-200/50 bg-cyan-50/10 text-cyan-600 dark:border-cyan-900/30 dark:bg-cyan-950/5'
+      color:
+        'border-cyan-200/50 bg-cyan-50/10 text-cyan-600 dark:border-cyan-900/30 dark:bg-cyan-950/5'
     }
   }
 
@@ -1447,7 +1480,8 @@ const decodedDataMeta = computed(() => {
         { label: t('อีเมล') || 'อีเมล', value: email || '-' }
       ],
       icon: User,
-      color: 'border-indigo-200/50 bg-indigo-50/10 text-indigo-600 dark:border-indigo-900/30 dark:bg-indigo-950/5'
+      color:
+        'border-indigo-200/50 bg-indigo-50/10 text-indigo-600 dark:border-indigo-900/30 dark:bg-indigo-950/5'
     }
   }
 
@@ -1457,11 +1491,10 @@ const decodedDataMeta = computed(() => {
     return {
       type: 'phone',
       title: t('โทรออก') || 'โทรออก',
-      details: [
-        { label: t('เบอร์โทรศัพท์') || 'เบอร์โทรศัพท์', value: num }
-      ],
+      details: [{ label: t('เบอร์โทรศัพท์') || 'เบอร์โทรศัพท์', value: num }],
       icon: Phone,
-      color: 'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
+      color:
+        'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
     }
   }
 
@@ -1478,7 +1511,8 @@ const decodedDataMeta = computed(() => {
         { label: t('ข้อความ') || 'ข้อความ', value: body || '-' }
       ],
       icon: MessageSquare,
-      color: 'border-violet-200/50 bg-violet-50/10 text-violet-600 dark:border-violet-900/30 dark:bg-violet-950/5'
+      color:
+        'border-violet-200/50 bg-violet-50/10 text-violet-600 dark:border-violet-900/30 dark:bg-violet-950/5'
     }
   }
 
@@ -1488,11 +1522,10 @@ const decodedDataMeta = computed(() => {
     return {
       type: 'location',
       title: t('พิกัดแผนที่ (Location)') || 'พิกัดแผนที่ (Location)',
-      details: [
-        { label: t('ละติจูด, ลองจิจูด') || 'ละติจูด, ลองจิจูด', value: coords }
-      ],
+      details: [{ label: t('ละติจูด, ลองจิจูด') || 'ละติจูด, ลองจิจูด', value: coords }],
       icon: MapPin,
-      color: 'border-rose-200/50 bg-rose-50/10 text-rose-600 dark:border-rose-900/30 dark:bg-rose-950/5'
+      color:
+        'border-rose-200/50 bg-rose-50/10 text-rose-600 dark:border-rose-900/30 dark:bg-rose-950/5'
     }
   }
 
@@ -1510,7 +1543,8 @@ const decodedDataMeta = computed(() => {
         { label: t('สถานที่') || 'สถานที่', value: location || '-' }
       ],
       icon: Calendar,
-      color: 'border-orange-200/50 bg-orange-50/10 text-orange-600 dark:border-orange-900/30 dark:bg-orange-950/5'
+      color:
+        'border-orange-200/50 bg-orange-50/10 text-orange-600 dark:border-orange-900/30 dark:bg-orange-950/5'
     }
   }
 
@@ -1522,21 +1556,24 @@ const decodedDataMeta = computed(() => {
         type: 'files',
         title: t('ไฟล์แชร์สาธารณะ (ZIP)') || 'ไฟล์แชร์สาธารณะ (ZIP)',
         details: [
-          { label: t('สถานะ') || 'สถานะ', value: t('พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด') || 'พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด' },
+          {
+            label: t('สถานะ') || 'สถานะ',
+            value: t('พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด') || 'พร้อมดาวน์โหลดผ่านคิวอาร์โค้ด'
+          },
           { label: t('ลิงก์เข้าถึง') || 'ลิงก์เข้าถึง', value: raw }
         ],
         icon: FileArchive,
-        color: 'border-amber-200/50 bg-amber-50/10 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/5'
+        color:
+          'border-amber-200/50 bg-amber-50/10 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/5'
       }
     }
     return {
       type: 'url',
       title: t('ลิงก์เว็บไซต์ (URL)') || 'ลิงก์เว็บไซต์ (URL)',
-      details: [
-        { label: t('ที่อยู่เว็บ') || 'ที่อยู่เว็บ', value: raw }
-      ],
+      details: [{ label: t('ที่อยู่เว็บ') || 'ที่อยู่เว็บ', value: raw }],
       icon: Globe,
-      color: 'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
+      color:
+        'border-blue-200/50 bg-blue-50/10 text-blue-600 dark:border-blue-900/30 dark:bg-blue-950/5'
     }
   }
 
@@ -1545,10 +1582,14 @@ const decodedDataMeta = computed(() => {
     type: 'text',
     title: t('ข้อความทั่วไป (Plain Text)') || 'ข้อความทั่วไป (Plain Text)',
     details: [
-      { label: t('ข้อมูลข้อความ') || 'ข้อมูลข้อความ', value: raw.length > 50 ? raw.slice(0, 50) + '...' : raw }
+      {
+        label: t('ข้อมูลข้อความ') || 'ข้อมูลข้อความ',
+        value: raw.length > 50 ? raw.slice(0, 50) + '...' : raw
+      }
     ],
     icon: Type,
-    color: 'border-zinc-200/50 bg-zinc-50/10 text-zinc-600 dark:border-zinc-800/60 dark:bg-zinc-900/10'
+    color:
+      'border-zinc-200/50 bg-zinc-50/10 text-zinc-600 dark:border-zinc-800/60 dark:bg-zinc-900/10'
   }
 })
 
@@ -1692,21 +1733,38 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         v-if="showUserGuide"
         class="glass-card border border-amber-200/50 bg-amber-50/10 p-5 shadow-sm dark:border-amber-900/30 dark:bg-amber-950/5"
       >
-        <div class="flex items-center gap-2 border-b border-zinc-200/60 pb-3 dark:border-zinc-800/60">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500 dark:text-amber-400">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        <div
+          class="flex items-center gap-2 border-b border-zinc-200/60 pb-3 dark:border-zinc-800/60"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="text-amber-500 dark:text-amber-400"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <h3 class="text-zinc-750 dark:text-zinc-250 text-xs font-bold uppercase tracking-wider">
             {{ t('User Guide') }}
           </h3>
         </div>
-        
+
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <!-- Step 1 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+          <div
+            class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+          >
+            <div
+              class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+            >
               1
             </div>
             <div class="min-w-0 flex-1 space-y-0.5">
@@ -1718,16 +1776,26 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </p>
               <!-- Animation block -->
               <div class="mt-2 flex items-center justify-start gap-1.5">
-                <div class="animate-pulse-slow size-3 rounded border border-blue-500 bg-blue-500/10"></div>
-                <div class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"></div>
-                <div class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"></div>
+                <div
+                  class="animate-pulse-slow size-3 rounded border border-blue-500 bg-blue-500/10"
+                ></div>
+                <div
+                  class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"
+                ></div>
+                <div
+                  class="size-3 rounded border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"
+                ></div>
               </div>
             </div>
           </div>
 
           <!-- Step 2 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+          <div
+            class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+          >
+            <div
+              class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+            >
               2
             </div>
             <div class="min-w-0 flex-1 space-y-0.5">
@@ -1738,7 +1806,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 {{ t('Fill out the fields in the form to populate your QR Code data.') }}
               </p>
               <!-- Animation block -->
-              <div class="h-4.5 mt-2 flex w-24 items-center gap-1 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-950/40">
+              <div
+                class="h-4.5 mt-2 flex w-24 items-center gap-1 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-950/40"
+              >
                 <span class="scale-[0.9] font-mono text-[8px] text-zinc-400">https://</span>
                 <span class="animate-blink h-2.5 w-0.5 bg-blue-500"></span>
               </div>
@@ -1746,8 +1816,12 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </div>
 
           <!-- Step 3 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+          <div
+            class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+          >
+            <div
+              class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+            >
               3
             </div>
             <div class="min-w-0 flex-1 space-y-0.5">
@@ -1759,16 +1833,29 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </p>
               <!-- Animation block -->
               <div class="mt-2 flex items-center justify-start gap-1.5">
-                <span class="animate-pulse-slow size-2.5 rounded-full bg-rose-500" style="animation-duration: 1.5s;"></span>
-                <span class="animate-pulse-slow size-2.5 rounded-full bg-emerald-500" style="animation-duration: 2s;"></span>
-                <span class="animate-pulse-slow size-2.5 rounded-full bg-blue-500" style="animation-duration: 2.5s;"></span>
+                <span
+                  class="animate-pulse-slow size-2.5 rounded-full bg-rose-500"
+                  style="animation-duration: 1.5s"
+                ></span>
+                <span
+                  class="animate-pulse-slow size-2.5 rounded-full bg-emerald-500"
+                  style="animation-duration: 2s"
+                ></span>
+                <span
+                  class="animate-pulse-slow size-2.5 rounded-full bg-blue-500"
+                  style="animation-duration: 2.5s"
+                ></span>
               </div>
             </div>
           </div>
 
           <!-- Step 4 -->
-          <div class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30">
-            <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+          <div
+            class="flex gap-3 rounded-xl border border-zinc-200/60 bg-white/50 p-3 transition-colors hover:border-blue-500/30 dark:border-zinc-800/60 dark:bg-zinc-900/30"
+          >
+            <div
+              class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-xs font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+            >
               4
             </div>
             <div class="min-w-0 flex-1 space-y-0.5">
@@ -1780,16 +1867,41 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </p>
               <!-- Animation block -->
               <div class="mt-2 flex items-center gap-1">
-                <div class="h-4.5 flex items-center justify-center rounded border border-blue-500/30 bg-blue-50 px-1.5 py-0.5 dark:bg-blue-950/20">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="animate-slide-down text-blue-600 dark:text-blue-400">
+                <div
+                  class="h-4.5 flex items-center justify-center rounded border border-blue-500/30 bg-blue-50 px-1.5 py-0.5 dark:bg-blue-950/20"
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="animate-slide-down text-blue-600 dark:text-blue-400"
+                  >
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <polyline points="19 12 12 19 5 12"></polyline>
                   </svg>
-                  <span class="ml-1 text-[8px] font-bold text-blue-600 dark:text-blue-400">PNG</span>
+                  <span class="ml-1 text-[8px] font-bold text-blue-600 dark:text-blue-400"
+                    >PNG</span
+                  >
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Dismiss guide -->
+        <div class="mt-4 flex justify-center">
+          <button
+            type="button"
+            @click="emit('dismissGuide')"
+            class="rounded-xl border border-amber-300/60 bg-white px-5 py-2 text-xs font-bold text-amber-700 shadow-sm outline-none transition-all hover:bg-amber-50 active:scale-[0.98] dark:border-amber-800/50 dark:bg-zinc-900 dark:text-amber-400 dark:hover:bg-amber-950/30"
+          >
+            {{ t('เข้าใจแล้ว เริ่มใช้งาน') }}
+          </button>
         </div>
       </div>
       <!-- Combined Controls Card -->
@@ -1797,8 +1909,12 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
         class="glass-card border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/40"
       >
         <!-- Card Header with Title and Reset Button -->
-        <div class="mb-4 flex flex-col gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/60 sm:flex-row sm:items-center sm:justify-between">
-          <span class="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        <div
+          class="mb-4 flex flex-col gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/60 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <span
+            class="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+          >
             {{ t('ตั้งค่าและรูปแบบ QR') || 'ตั้งค่าและรูปแบบ QR' }}
           </span>
           <button
@@ -1806,11 +1922,20 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
             @click="resetToDefaultSettings"
             class="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-500 outline-none transition-all duration-300 hover:scale-105 hover:bg-red-100 hover:text-red-600 active:scale-[0.98] dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/40"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-              <path d="M16 3h5v5"/>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-              <path d="M8 21H3v-5"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="size-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+              <path d="M16 3h5v5" />
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+              <path d="M8 21H3v-5" />
             </svg>
             <span>{{ t('ล้างการตั้งค่าใหม่ทั้งหมด') || 'ล้างการตั้งค่าใหม่ทั้งหมด' }}</span>
           </button>
@@ -1880,280 +2005,288 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </button>
         </div>
 
+        <!-- Active tab orientation line -->
+        <p
+          v-if="activeTabDescription"
+          class="-mt-2 mb-4 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400"
+        >
+          {{ activeTabDescription }}
+        </p>
+
         <!-- 1. DATA TYPE TAB -->
         <div v-if="isAutomation || activeStyleTab === 'datatype'" class="space-y-4">
           <div
             class="dark:border-zinc-850 mb-4 flex items-center justify-between border-b border-zinc-100 pb-3"
           >
             <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              {{ t('ประเภทการป้อนข้อมูล') }}
+              {{ t('เลือกประเภทข้อมูล') }}
             </h3>
 
-          <!-- Mode Toggles -->
-          <div
-            class="relative flex w-[170px] items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800"
-          >
-            <!-- Sliding background pill -->
+            <!-- Mode Toggles -->
             <div
-              class="duration-350 absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all dark:bg-zinc-700"
-              :style="{
-                left: exportMode === ExportMode.Single ? '2px' : 'calc(50% + 1px)',
-                width: 'calc(50% - 3px)',
-                transitionTimingFunction: 'var(--ease-out-expo)'
-              }"
-            ></div>
+              class="relative flex w-[170px] items-center gap-0.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800"
+            >
+              <!-- Sliding background pill -->
+              <div
+                class="duration-350 absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all dark:bg-zinc-700"
+                :style="{
+                  left: exportMode === ExportMode.Single ? '2px' : 'calc(50% + 1px)',
+                  width: 'calc(50% - 3px)',
+                  transitionTimingFunction: 'var(--ease-out-expo)'
+                }"
+              ></div>
 
-            <button
-              type="button"
-              :class="[
-                'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
-                exportMode === ExportMode.Single
-                  ? 'text-zinc-900 dark:text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-              ]"
-              @click="exportMode = ExportMode.Single"
-            >
-              {{ $t('Single export') }}
-            </button>
-            <button
-              type="button"
-              :class="[
-                'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
-                exportMode === ExportMode.Batch
-                  ? 'text-zinc-900 dark:text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-              ]"
-              @click="exportMode = ExportMode.Batch"
-            >
-              {{ $t('Batch export') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Single QR Data Entry -->
-        <div v-if="exportMode === ExportMode.Single" class="w-full">
-          <InlineDataTemplates :key="templateResetKey" v-model="data" />
-        </div>
-
-        <!-- Batch CSV Data Entry -->
-        <div v-else class="w-full space-y-4">
-          <template v-if="!inputFileForBatchEncoding">
-            <BatchExportFieldsGuide />
-            <button
-              type="button"
-              class="upload-dropzone-pulse duration-350 flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20"
-              :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
-              @click="fileInput?.click()"
-              @keyup.enter="fileInput?.click()"
-              @keyup.space="fileInput?.click()"
-              @dragover.prevent
-              @drop.prevent="onBatchInputFileUpload"
-              aria-label="Choose a CSV file"
-            >
-              <UploadCloud
-                class="mb-2 size-10 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:text-zinc-600"
-              />
-              <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                {{ $t('Upload a CSV file') }}
-              </p>
-              <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
-                ลากไฟล์ CSV มาวางตรงนี้ หรือคลิกเพื่อค้นหา
-              </p>
-            </button>
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".csv,.txt"
-              class="hidden"
-              @change="onBatchInputFileUpload"
-            />
-            <p
-              v-if="isBatchInputFileValidationFailed"
-              class="mt-2 text-xs font-medium text-red-500"
-            >
-              ❌ {{ t('Invalid CSV file schema.') }}
-            </p>
-          </template>
-
-          <template v-else>
-            <div
-              class="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800"
-            >
-              <div class="flex flex-col">
-                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >ความคืบหน้าของไฟล์ CSV</span
-                >
-                <span class="text-[10px] text-zinc-400 dark:text-zinc-500"
-                  >อัปโหลดเรียบร้อย: {{ parsedCsvResult?.data?.length || 0 }} รายการ</span
-                >
-              </div>
               <button
                 type="button"
-                @click="resetBatchExport"
-                class="text-xs font-semibold text-red-500 outline-none hover:text-red-600"
+                :class="[
+                  'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
+                  exportMode === ExportMode.Single
+                    ? 'text-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ]"
+                @click="exportMode = ExportMode.Single"
               >
-                {{ t('ล้างข้อมูล') }}
+                {{ $t('Single export') }}
+              </button>
+              <button
+                type="button"
+                :class="[
+                  'relative z-10 flex-1 rounded-lg py-1 text-[11px] font-bold outline-none transition-colors duration-300',
+                  exportMode === ExportMode.Batch
+                    ? 'text-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ]"
+                @click="exportMode = ExportMode.Batch"
+              >
+                {{ $t('Batch export') }}
               </button>
             </div>
+          </div>
 
-            <!-- CSV Row Preview & Editor -->
-            <div
-              v-if="dataStringsFromCsv.length > 0"
-              class="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20"
-            >
-              <div
-                class="dark:border-zinc-850 mb-3 flex items-center justify-between border-b border-zinc-200/60 pb-2"
+          <!-- Single QR Data Entry -->
+          <div v-if="exportMode === ExportMode.Single" class="w-full">
+            <InlineDataTemplates :key="templateResetKey" v-model="data" />
+          </div>
+
+          <!-- Batch CSV Data Entry -->
+          <div v-else class="w-full space-y-4">
+            <template v-if="!inputFileForBatchEncoding">
+              <BatchExportFieldsGuide />
+              <button
+                type="button"
+                class="upload-dropzone-pulse duration-350 flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-6 text-center transition-all hover:scale-[1.01] hover:bg-zinc-50/50 dark:border-zinc-800/80 dark:hover:bg-zinc-900/20"
+                :style="{ transitionTimingFunction: 'var(--ease-out-expo)' }"
+                @click="fileInput?.click()"
+                @keyup.enter="fileInput?.click()"
+                @keyup.space="fileInput?.click()"
+                @dragover.prevent
+                @drop.prevent="onBatchInputFileUpload"
+                aria-label="Choose a CSV file"
               >
-                <span class="text-xs font-semibold text-zinc-500">{{
-                  $t('Edit & Preview Row')
-                }}</span>
-                <span class="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                  {{ previewRowIndex + 1 }} / {{ dataStringsFromCsv.length }}
-                </span>
-              </div>
-              <div class="space-y-3">
-                <!-- Data Input (Text/URL) -->
-                <div>
-                  <span
-                    class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
-                    >{{ $t('QR Code Data / Message') }}</span
-                  >
-                  <textarea
-                    v-model="dataStringsFromCsv[previewRowIndex]"
-                    @input="data = dataStringsFromCsv[previewRowIndex]"
-                    rows="2"
-                    class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
-                    placeholder="https://example.com"
-                  ></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <!-- Frame Text Input -->
-                  <div>
-                    <span
-                      class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
-                      >{{ $t('Frame text') }}</span
-                    >
-                    <input
-                      type="text"
-                      v-model="frameTextsFromCsv[previewRowIndex]"
-                      @input="frameText = frameTextsFromCsv[previewRowIndex] || defaultFrameText"
-                      class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
-                      :placeholder="defaultFrameText"
-                    />
-                  </div>
-
-                  <!-- File Name Input -->
-                  <div>
-                    <span
-                      class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
-                      >{{ $t('File name') }}</span
-                    >
-                    <input
-                      type="text"
-                      v-model="fileNamesFromCsv[previewRowIndex]"
-                      @keypress="onFilenameKeypress"
-                      class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
-                      placeholder="filename"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div class="mt-2 flex items-center justify-between">
-                <button
-                  type="button"
-                  class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 outline-none disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
-                  :disabled="previewRowIndex === 0"
-                  @click="previewRowIndex--"
-                >
-                  &larr; ก่อนหน้า
-                </button>
-                <button
-                  type="button"
-                  class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 outline-none disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
-                  :disabled="previewRowIndex === dataStringsFromCsv.length - 1"
-                  @click="previewRowIndex++"
-                >
-                  ถัดไป &rarr;
-                </button>
-              </div>
-            </div>
-
-            <!-- Run Batch Processing buttons -->
-            <div class="space-y-2 pt-2">
-              <span class="block text-xs font-bold text-zinc-500"
-                >เลือกรูปแบบที่จะส่งออกชุดไฟล์ ZIP:</span
+                <UploadCloud
+                  class="mb-2 size-10 text-zinc-400 transition-transform duration-300 hover:-translate-y-0.5 dark:text-zinc-600"
+                />
+                <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  {{ $t('Upload a CSV file') }}
+                </p>
+                <p class="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
+                  ลากไฟล์ CSV มาวางตรงนี้ หรือคลิกเพื่อค้นหา
+                </p>
+              </button>
+              <input
+                ref="fileInput"
+                type="file"
+                accept=".csv,.txt"
+                class="hidden"
+                @change="onBatchInputFileUpload"
+              />
+              <p
+                v-if="isBatchInputFileValidationFailed"
+                class="mt-2 text-xs font-medium text-red-500"
               >
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  @click="downloadQRImage('png')"
-                  :disabled="isBatchExportRunning"
-                  class="flex items-center justify-center rounded-xl bg-zinc-800 py-2.5 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:bg-zinc-900 disabled:opacity-50 dark:bg-zinc-700 dark:hover:bg-zinc-600"
-                >
-                  <span>ส่งออก PNG ZIP</span>
-                </button>
-                <button
-                  type="button"
-                  @click="downloadQRImage('jpg')"
-                  :disabled="isBatchExportRunning"
-                  class="flex items-center justify-center rounded-xl bg-zinc-800 py-2.5 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:bg-zinc-900 disabled:opacity-50 dark:bg-zinc-700 dark:hover:bg-zinc-600"
-                >
-                  <span>ส่งออก JPG ZIP</span>
-                </button>
-                <button
-                  type="button"
-                  @click="downloadQRImage('svg')"
-                  :disabled="isBatchExportRunning"
-                  class="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none transition-all hover:bg-blue-700 disabled:opacity-50"
-                >
-                  <span>ส่งออก SVG ZIP</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Batch Progress -->
-            <div
-              v-if="currentExportedQrCodeIndex != null"
-              class="p-4.5 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="size-2 animate-pulse rounded-full bg-[var(--primary)]"></div>
-                  <p class="text-xs font-bold text-[var(--text-primary)]">
-                    {{ $t('Creating QR codes... This may take a while.') }}
-                  </p>
-                </div>
-                <span class="font-mono text-xs font-semibold text-zinc-500">
-                  {{
-                    Math.round(
-                      ((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100
-                    )
-                  }}%
-                </span>
-              </div>
-              <!-- Progress track -->
-              <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                <!-- Progress fill -->
-                <div
-                  class="h-full rounded-full bg-[var(--primary)] transition-all duration-300 ease-out"
-                  :style="{
-                    width: `${((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100}%`
-                  }"
-                ></div>
-              </div>
-              <p class="text-[10px] text-zinc-400">
-                {{
-                  $t('{index} / {count} QR codes have been created.', {
-                    index: currentExportedQrCodeIndex + 1,
-                    count: dataStringsFromCsv.length
-                  })
-                }}
+                ❌ {{ t('Invalid CSV file schema.') }}
               </p>
-            </div>
-          </template>
+            </template>
+
+            <template v-else>
+              <div
+                class="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-zinc-800"
+              >
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                    >ความคืบหน้าของไฟล์ CSV</span
+                  >
+                  <span class="text-[10px] text-zinc-400 dark:text-zinc-500"
+                    >อัปโหลดเรียบร้อย: {{ parsedCsvResult?.data?.length || 0 }} รายการ</span
+                  >
+                </div>
+                <button
+                  type="button"
+                  @click="resetBatchExport"
+                  class="text-xs font-semibold text-red-500 outline-none hover:text-red-600"
+                >
+                  {{ t('ล้างข้อมูล') }}
+                </button>
+              </div>
+
+              <!-- CSV Row Preview & Editor -->
+              <div
+                v-if="dataStringsFromCsv.length > 0"
+                class="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/20"
+              >
+                <div
+                  class="dark:border-zinc-850 mb-3 flex items-center justify-between border-b border-zinc-200/60 pb-2"
+                >
+                  <span class="text-xs font-semibold text-zinc-500">{{
+                    $t('Edit & Preview Row')
+                  }}</span>
+                  <span class="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                    {{ previewRowIndex + 1 }} / {{ dataStringsFromCsv.length }}
+                  </span>
+                </div>
+                <div class="space-y-3">
+                  <!-- Data Input (Text/URL) -->
+                  <div>
+                    <span
+                      class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                      >{{ $t('QR Code Data / Message') }}</span
+                    >
+                    <textarea
+                      v-model="dataStringsFromCsv[previewRowIndex]"
+                      @input="data = dataStringsFromCsv[previewRowIndex]"
+                      rows="2"
+                      class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                      placeholder="https://example.com"
+                    ></textarea>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <!-- Frame Text Input -->
+                    <div>
+                      <span
+                        class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                        >{{ $t('Frame text') }}</span
+                      >
+                      <input
+                        type="text"
+                        v-model="frameTextsFromCsv[previewRowIndex]"
+                        @input="frameText = frameTextsFromCsv[previewRowIndex] || defaultFrameText"
+                        class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        :placeholder="defaultFrameText"
+                      />
+                    </div>
+
+                    <!-- File Name Input -->
+                    <div>
+                      <span
+                        class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
+                        >{{ $t('File name') }}</span
+                      >
+                      <input
+                        type="text"
+                        v-model="fileNamesFromCsv[previewRowIndex]"
+                        @keypress="onFilenameKeypress"
+                        class="dark:text-zinc-350 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-xs text-zinc-700 outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        placeholder="filename"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 outline-none disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                    :disabled="previewRowIndex === 0"
+                    @click="previewRowIndex--"
+                  >
+                    &larr; ก่อนหน้า
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 outline-none disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                    :disabled="previewRowIndex === dataStringsFromCsv.length - 1"
+                    @click="previewRowIndex++"
+                  >
+                    ถัดไป &rarr;
+                  </button>
+                </div>
+              </div>
+
+              <!-- Run Batch Processing buttons -->
+              <div class="space-y-2 pt-2">
+                <span class="block text-xs font-bold text-zinc-500"
+                  >เลือกรูปแบบที่จะส่งออกชุดไฟล์ ZIP:</span
+                >
+                <div class="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    @click="downloadQRImage('png')"
+                    :disabled="isBatchExportRunning"
+                    class="flex items-center justify-center rounded-xl bg-zinc-800 py-2.5 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:bg-zinc-900 disabled:opacity-50 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                  >
+                    <span>ส่งออก PNG ZIP</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="downloadQRImage('jpg')"
+                    :disabled="isBatchExportRunning"
+                    class="flex items-center justify-center rounded-xl bg-zinc-800 py-2.5 text-xs font-bold text-white shadow-md shadow-zinc-800/10 outline-none transition-all hover:bg-zinc-900 disabled:opacity-50 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                  >
+                    <span>ส่งออก JPG ZIP</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="downloadQRImage('svg')"
+                    :disabled="isBatchExportRunning"
+                    class="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/10 outline-none transition-all hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <span>ส่งออก SVG ZIP</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Batch Progress -->
+              <div
+                v-if="currentExportedQrCodeIndex != null"
+                class="p-4.5 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/40"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="size-2 animate-pulse rounded-full bg-[var(--primary)]"></div>
+                    <p class="text-xs font-bold text-[var(--text-primary)]">
+                      {{ $t('Creating QR codes... This may take a while.') }}
+                    </p>
+                  </div>
+                  <span class="font-mono text-xs font-semibold text-zinc-500">
+                    {{
+                      Math.round(
+                        ((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100
+                      )
+                    }}%
+                  </span>
+                </div>
+                <!-- Progress track -->
+                <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                  <!-- Progress fill -->
+                  <div
+                    class="h-full rounded-full bg-[var(--primary)] transition-all duration-300 ease-out"
+                    :style="{
+                      width: `${((currentExportedQrCodeIndex + 1) / dataStringsFromCsv.length) * 100}%`
+                    }"
+                  ></div>
+                </div>
+                <p class="text-[10px] text-zinc-400">
+                  {{
+                    $t('{index} / {count} QR codes have been created.', {
+                      index: currentExportedQrCodeIndex + 1,
+                      count: dataStringsFromCsv.length
+                    })
+                  }}
+                </p>
+              </div>
+            </template>
+          </div>
         </div>
-      </div>
 
         <!-- 2. STYLE TAB -->
         <div v-if="isAutomation || activeStyleTab === 'style'" class="space-y-4">
@@ -2276,7 +2409,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   <input
                     type="color"
                     id="background-color"
-                    :value="styleBackground === 'transparent' ? '#ffffff' : (styleBackground || '#ffffff')"
+                    :value="
+                      styleBackground === 'transparent' ? '#ffffff' : styleBackground || '#ffffff'
+                    "
                     @input="styleBackground = ($event.target as HTMLInputElement).value"
                     :disabled="!includeBackground"
                     class="size-8 cursor-pointer rounded-lg border border-zinc-200/80 disabled:opacity-40 dark:border-zinc-800"
@@ -2447,7 +2582,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               >สีของหัวอ่าน (Corner Eyes Colors)</span
             >
 
-            <div class="grid grid-cols-1 gap-3.5 border-b border-zinc-100 pb-4 dark:border-zinc-800 sm:grid-cols-2">
+            <div
+              class="grid grid-cols-1 gap-3.5 border-b border-zinc-100 pb-4 dark:border-zinc-800 sm:grid-cols-2"
+            >
               <!-- Corner Squares color -->
               <div
                 class="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-2.5 dark:border-zinc-800 dark:bg-zinc-950/10"
@@ -2579,13 +2716,23 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </div>
 
               <!-- Top/Bottom Custom Text Styles (Font size and color) -->
-              <div v-if="frameTextTop || frameTextBottom" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div
+                v-if="frameTextTop || frameTextBottom"
+                class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+              >
                 <!-- Top Text customization -->
-                <div v-if="frameTextTop" class="space-y-2.5 rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10">
-                  <span class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">ปรับรูปภาพข้อความด้านบน (Top Text)</span>
+                <div
+                  v-if="frameTextTop"
+                  class="space-y-2.5 rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10"
+                >
+                  <span class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500"
+                    >ปรับรูปภาพข้อความด้านบน (Top Text)</span
+                  >
                   <div class="grid grid-cols-2 gap-3">
                     <div>
-                      <label class="mb-1 block text-[10px] text-zinc-400">ขนาดตัวอักษร: {{ frameTextTopSize }}px</label>
+                      <label class="mb-1 block text-[10px] text-zinc-400"
+                        >ขนาดตัวอักษร: {{ frameTextTopSize }}px</label
+                      >
                       <input
                         type="range"
                         min="10"
@@ -2643,7 +2790,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       <div class="flex gap-1.5">
                         <button
                           type="button"
-                          @click="frameTextTopWeight = frameTextTopWeight === 'bold' ? 'normal' : 'bold'"
+                          @click="
+                            frameTextTopWeight = frameTextTopWeight === 'bold' ? 'normal' : 'bold'
+                          "
                           :class="[
                             'flex-1 rounded-lg border py-1.5 text-xs font-bold outline-none transition-all',
                             frameTextTopWeight === 'bold'
@@ -2655,7 +2804,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                         </button>
                         <button
                           type="button"
-                          @click="frameTextTopItalic = frameTextTopItalic === 'italic' ? 'normal' : 'italic'"
+                          @click="
+                            frameTextTopItalic =
+                              frameTextTopItalic === 'italic' ? 'normal' : 'italic'
+                          "
                           :class="[
                             'flex-1 rounded-lg border py-1.5 text-xs font-semibold italic outline-none transition-all',
                             frameTextTopItalic === 'italic'
@@ -2671,11 +2823,18 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 </div>
 
                 <!-- Bottom Text customization -->
-                <div v-if="frameTextBottom" class="space-y-2.5 rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10">
-                  <span class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">ปรับรูปภาพข้อความด้านล่าง (Bottom Text)</span>
+                <div
+                  v-if="frameTextBottom"
+                  class="space-y-2.5 rounded-xl border border-zinc-200/60 bg-zinc-50/30 p-3.5 dark:border-zinc-800/60 dark:bg-zinc-950/10"
+                >
+                  <span class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500"
+                    >ปรับรูปภาพข้อความด้านล่าง (Bottom Text)</span
+                  >
                   <div class="grid grid-cols-2 gap-3">
                     <div>
-                      <label class="mb-1 block text-[10px] text-zinc-400">ขนาดตัวอักษร: {{ frameTextBottomSize }}px</label>
+                      <label class="mb-1 block text-[10px] text-zinc-400"
+                        >ขนาดตัวอักษร: {{ frameTextBottomSize }}px</label
+                      >
                       <input
                         type="range"
                         min="10"
@@ -2706,7 +2865,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       <label class="mb-1 block text-[10px] text-zinc-400">รูปแบบฟอนต์</label>
                       <select
                         :value="frameTextBottomFont || ''"
-                        @change="onFontFamilyBottomChange(($event.target as HTMLSelectElement).value)"
+                        @change="
+                          onFontFamilyBottomChange(($event.target as HTMLSelectElement).value)
+                        "
                         class="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-2.5 py-1.5 text-xs text-input outline-none dark:border-zinc-800 dark:bg-zinc-950/20"
                       >
                         <option value="">Default (ตามกรอบ)</option>
@@ -2733,7 +2894,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                       <div class="flex gap-1.5">
                         <button
                           type="button"
-                          @click="frameTextBottomWeight = frameTextBottomWeight === 'bold' ? 'normal' : 'bold'"
+                          @click="
+                            frameTextBottomWeight =
+                              frameTextBottomWeight === 'bold' ? 'normal' : 'bold'
+                          "
                           :class="[
                             'flex-1 rounded-lg border py-1.5 text-xs font-bold outline-none transition-all',
                             frameTextBottomWeight === 'bold'
@@ -2745,7 +2909,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                         </button>
                         <button
                           type="button"
-                          @click="frameTextBottomItalic = frameTextBottomItalic === 'italic' ? 'normal' : 'italic'"
+                          @click="
+                            frameTextBottomItalic =
+                              frameTextBottomItalic === 'italic' ? 'normal' : 'italic'
+                          "
                           :class="[
                             'flex-1 rounded-lg border py-1.5 text-xs font-semibold italic outline-none transition-all',
                             frameTextBottomItalic === 'italic'
@@ -2762,12 +2929,16 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </div>
 
               <!-- Legacy Position Selector (Visible only if Top/Bottom texts are empty) -->
-              <div v-if="!frameTextTop && !frameTextBottom" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div
+                v-if="!frameTextTop && !frameTextBottom"
+                class="grid grid-cols-1 gap-3.5 sm:grid-cols-2"
+              >
                 <fieldset class="space-y-1">
                   <legend
                     class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-400"
-                    >{{ t('Position') }}</legend
                   >
+                    {{ t('Position') }}
+                  </legend>
                   <div class="flex gap-1">
                     <label
                       v-for="position in framePositions"
@@ -2859,7 +3030,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                   >สีพื้นหลังของกรอบ (Frame Background)</span
                 >
                 <div class="flex items-center gap-2.5">
-                  <div class="flex items-center gap-1.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800">
+                  <div
+                    class="flex items-center gap-1.5 rounded-xl border border-zinc-200/50 bg-zinc-100 p-0.5 dark:border-zinc-700/50 dark:bg-zinc-800"
+                  >
                     <label class="relative cursor-pointer">
                       <input
                         type="radio"
@@ -2868,7 +3041,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                         v-model="frameBackgroundType"
                         class="peer absolute inset-0 cursor-pointer opacity-0"
                       />
-                      <span class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100">
+                      <span
+                        class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100"
+                      >
                         {{ t('Color') }}
                       </span>
                     </label>
@@ -2880,7 +3055,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                         v-model="frameBackgroundType"
                         class="peer absolute inset-0 cursor-pointer opacity-0"
                       />
-                      <span class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100">
+                      <span
+                        class="inline-block rounded-lg px-3 py-1 text-xs font-bold text-zinc-500 transition-all peer-checked:bg-white peer-checked:text-zinc-900 peer-checked:shadow-sm dark:peer-checked:bg-zinc-700 dark:peer-checked:text-zinc-100"
+                      >
                         {{ t('Image') }}
                       </span>
                     </label>
@@ -2889,7 +3066,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     v-if="frameBackgroundType === 'color'"
                     type="color"
                     id="frame-bg-color"
-                    :value="frameStyle.backgroundColor === 'transparent' ? '#ffffff' : (frameStyle.backgroundColor || '#ffffff')"
+                    :value="
+                      frameStyle.backgroundColor === 'transparent'
+                        ? '#ffffff'
+                        : frameStyle.backgroundColor || '#ffffff'
+                    "
                     @input="frameStyle.backgroundColor = ($event.target as HTMLInputElement).value"
                     class="size-8 cursor-pointer rounded-xl border border-zinc-200/80 dark:border-zinc-800"
                   />
@@ -2900,7 +3081,11 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                     @click="uploadFrameBackgroundImage"
                     class="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 outline-none hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
-                    {{ frameStyle.backgroundImage ? t('เปลี่ยนรูป') || 'เปลี่ยนรูป' : t('อัปโหลดรูป') || 'อัปโหลดรูป' }}
+                    {{
+                      frameStyle.backgroundImage
+                        ? t('เปลี่ยนรูป') || 'เปลี่ยนรูป'
+                        : t('อัปโหลดรูป') || 'อัปโหลดรูป'
+                    }}
                   </button>
                 </div>
               </div>
@@ -3060,21 +3245,33 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           :class="decodedDataMeta.color"
         >
           <!-- Icon Frame -->
-          <div class="dark:text-zinc-350 flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/40 bg-white text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div
+            class="dark:text-zinc-350 flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/40 bg-white text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          >
             <component :is="decodedDataMeta.icon" class="size-4.5" />
           </div>
           <!-- Details -->
           <div class="min-w-0 flex-1 space-y-0.5">
             <h4 class="text-zinc-850 flex items-center gap-1.5 font-bold dark:text-zinc-100">
               <span>{{ decodedDataMeta.title }}</span>
-              <span class="rounded border border-zinc-200/40 bg-white/70 px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/80">
+              <span
+                class="rounded border border-zinc-200/40 bg-white/70 px-1 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/80"
+              >
                 {{ decodedDataMeta.type }}
               </span>
             </h4>
             <div class="space-y-0.5 text-[10px] leading-relaxed">
-              <div v-for="(detail, index) in decodedDataMeta.details" :key="index" class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4">
+              <div
+                v-for="(detail, index) in decodedDataMeta.details"
+                :key="index"
+                class="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-4"
+              >
                 <span class="shrink-0 font-medium text-zinc-400">{{ detail.label }}:</span>
-                <span class="truncate font-semibold text-zinc-700 dark:text-zinc-300" :title="detail.value">{{ detail.value }}</span>
+                <span
+                  class="truncate font-semibold text-zinc-700 dark:text-zinc-300"
+                  :title="detail.value"
+                  >{{ detail.value }}</span
+                >
               </div>
             </div>
           </div>
@@ -3082,10 +3279,59 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
         <!-- Export Actions Grid -->
         <div class="w-full select-none space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <!-- Copy button -->
+          <!-- Primary action: PNG covers documents, chat, and print for most users -->
+          <div class="space-y-1">
             <button
-              v-if="exportMode !== ExportMode.Batch"
+              id="download-qr-image-button-png"
+              class="btn-gold-gradient flex w-full items-center justify-center gap-2 rounded-xl p-3 text-sm font-extrabold shadow-md hover:scale-[1.01] active:scale-[0.99]"
+              @click="downloadQRImage('png')"
+              :disabled="isExportButtonDisabled"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>{{ t('ดาวน์โหลดรูปภาพ (PNG)') }}</span>
+            </button>
+            <p class="text-center text-[10px] text-zinc-400 dark:text-zinc-500">
+              {{ t('แนะนำ ใช้ได้ทั้งแนบเอกสาร แชท และงานพิมพ์ทั่วไป') }}
+            </p>
+          </div>
+
+          <!-- Secondary formats -->
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              id="download-qr-image-button-svg"
+              class="btn-gold-outline flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="downloadQRImage('svg')"
+              :disabled="isExportButtonDisabled"
+            >
+              <span>{{ t('ดาวน์โหลด SVG') }}</span>
+            </button>
+            <button
+              id="download-qr-image-button-jpg"
+              class="btn-gold-outline flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="downloadQRImage('jpg')"
+              :disabled="isExportButtonDisabled"
+            >
+              <span>ดาวน์โหลด JPG</span>
+            </button>
+          </div>
+
+          <!-- Copy + ASCII (single mode only) -->
+          <div v-if="exportMode !== ExportMode.Batch" class="grid grid-cols-2 gap-2">
+            <button
               id="copy-qr-image-button"
               class="btn-gold-outline flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
               @click="copyQRToClipboard"
@@ -3108,45 +3354,9 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
               </svg>
               <span>{{ t('คัดลอกรูปภาพ') }}</span>
             </button>
-
-            <!-- Export SVG -->
-            <button
-              id="download-qr-image-button-svg"
-              class="btn-gold-gradient flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-extrabold shadow-md hover:scale-[1.02] active:scale-[0.98]"
-              @click="downloadQRImage('svg')"
-              :disabled="isExportButtonDisabled"
-            >
-              <span>{{ t('ดาวน์โหลด SVG') }}</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <!-- Export PNG -->
-            <button
-              id="download-qr-image-button-png"
-              class="btn-gold-gradient flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-extrabold shadow-md hover:scale-[1.02] active:scale-[0.98]"
-              @click="downloadQRImage('png')"
-              :disabled="isExportButtonDisabled"
-            >
-              <span>ดาวน์โหลด PNG</span>
-            </button>
-
-            <!-- Export JPG -->
-            <button
-              id="download-qr-image-button-jpg"
-              class="btn-gold-gradient flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-extrabold shadow-md hover:scale-[1.02] active:scale-[0.98]"
-              @click="downloadQRImage('jpg')"
-              :disabled="isExportButtonDisabled"
-            >
-              <span>ดาวน์โหลด JPG</span>
-            </button>
-          </div>
-
-          <!-- ASCII Text Export Option -->
-          <div v-if="exportMode !== ExportMode.Batch" class="w-full">
             <button
               type="button"
-              class="btn-gold-outline flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold outline-none transition-all hover:scale-[1.01]"
+              class="btn-gold-outline flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold outline-none transition-all hover:scale-[1.02] active:scale-[0.98]"
               @click="openTextExportModal"
               :disabled="isExportButtonDisabled"
             >
@@ -3165,58 +3375,100 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
                 <line x1="9" y1="20" x2="15" y2="20"></line>
                 <line x1="12" y1="4" x2="12" y2="20"></line>
               </svg>
-              <span>ส่งออกเป็นตัวอักษรศิลป์ (ASCII Text)</span>
+              <span>{{ t('ตัวอักษรศิลป์ (ASCII)') }}</span>
             </button>
           </div>
 
-          <!-- Raw code box showing the generated data string -->
-          <div v-if="exportMode !== ExportMode.Batch" class="w-full space-y-1 pt-1.5">
-            <div class="flex items-center justify-between">
-              <label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">ข้อมูลของคิวอาร์ (QR Encoded Data)</label>
-              <span v-if="showRawDataCopied" class="animate-pulse text-[10px] font-bold text-amber-600 dark:text-[#d4af37]">คัดลอกแล้ว!</span>
-            </div>
-            <div class="relative flex items-center">
-              <input
-                type="text"
-                readonly
-                :value="data"
-                class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 py-2.5 pl-3.5 pr-10 font-mono text-[11px] text-zinc-600 outline-none dark:border-zinc-800 dark:bg-zinc-950/20 dark:text-zinc-400"
-                placeholder="ไม่มีข้อมูลเข้ารหัส"
-              />
-              <button
-                type="button"
-                @click="copyRawData"
-                class="hover:text-zinc-650 absolute right-3 text-zinc-400 dark:hover:text-zinc-200"
-                title="คัดลอกข้อมูลดิบ"
+          <!-- Advanced: raw encoded data + config save/load, collapsed by default -->
+          <details class="group w-full pt-1">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-center gap-1 text-[11px] font-semibold text-zinc-400 outline-none hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 [&::-webkit-details-marker]:hidden"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="transition-transform duration-200 group-open:rotate-180"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+              <span>{{ t('ตัวเลือกขั้นสูง') }}</span>
+            </summary>
 
-          <!-- Save/Load config file options -->
-          <div
-            class="flex items-center justify-center gap-4 border-t border-zinc-200/60 pt-3 dark:border-zinc-800/60"
-          >
-            <button
-              id="save-qr-code-config-button"
-              class="text-xs font-semibold text-zinc-500 outline-none hover:text-zinc-700 dark:hover:text-zinc-300"
-              @click="downloadQRConfig"
-            >
-              {{ t('Save Config') }}
-            </button>
-            <span class="text-zinc-300 dark:text-zinc-800">|</span>
-            <button
-              id="load-qr-code-config-button"
-              class="text-xs font-semibold text-zinc-500 outline-none hover:text-zinc-700 dark:hover:text-zinc-300"
-              @click="loadQrConfigFromFile"
-            >
-              {{ t('Load Config') }}
-            </button>
-          </div>
+            <div class="mt-3 space-y-3">
+              <!-- Raw code box showing the generated data string -->
+              <div v-if="exportMode !== ExportMode.Batch" class="w-full space-y-1">
+                <div class="flex items-center justify-between">
+                  <label
+                    class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"
+                    >ข้อมูลของคิวอาร์ (QR Encoded Data)</label
+                  >
+                  <span
+                    v-if="showRawDataCopied"
+                    class="animate-pulse text-[10px] font-bold text-amber-600 dark:text-[#d4af37]"
+                    >คัดลอกแล้ว!</span
+                  >
+                </div>
+                <div class="relative flex items-center">
+                  <input
+                    type="text"
+                    readonly
+                    :value="data"
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 py-2.5 pl-3.5 pr-10 font-mono text-[11px] text-zinc-600 outline-none dark:border-zinc-800 dark:bg-zinc-950/20 dark:text-zinc-400"
+                    placeholder="ไม่มีข้อมูลเข้ารหัส"
+                  />
+                  <button
+                    type="button"
+                    @click="copyRawData"
+                    class="hover:text-zinc-650 absolute right-3 text-zinc-400 dark:hover:text-zinc-200"
+                    title="คัดลอกข้อมูลดิบ"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Save/Load config file options -->
+              <div
+                class="flex items-center justify-center gap-4 border-t border-zinc-200/60 pt-3 dark:border-zinc-800/60"
+              >
+                <button
+                  id="save-qr-code-config-button"
+                  class="text-xs font-semibold text-zinc-500 outline-none hover:text-zinc-700 dark:hover:text-zinc-300"
+                  @click="downloadQRConfig"
+                >
+                  {{ t('Save Config') }}
+                </button>
+                <span class="text-zinc-300 dark:text-zinc-800">|</span>
+                <button
+                  id="load-qr-code-config-button"
+                  class="text-xs font-semibold text-zinc-500 outline-none hover:text-zinc-700 dark:hover:text-zinc-300"
+                  @click="loadQrConfigFromFile"
+                >
+                  {{ t('Load Config') }}
+                </button>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </Teleport>
@@ -3243,16 +3495,34 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
 <style scoped>
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 @keyframes pulse-slow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.96); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.96);
+  }
 }
 @keyframes slide-down {
-  0% { transform: translateY(-3px); opacity: 0.3; }
-  50% { transform: translateY(2px); opacity: 1; }
-  100% { transform: translateY(-3px); opacity: 0.3; }
+  0% {
+    transform: translateY(-3px);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-3px);
+    opacity: 0.3;
+  }
 }
 .animate-blink {
   animation: blink 1s step-end infinite;

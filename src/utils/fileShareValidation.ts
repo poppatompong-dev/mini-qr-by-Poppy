@@ -25,6 +25,7 @@ export type ShareValidationCode =
   | 'BLOCKED_FILE_TYPE'
   | 'INVALID_SHARE_ID'
   | 'SUPABASE_NOT_CONFIGURED'
+  | 'SERVICE_UNREACHABLE'
   | 'SESSION_EXPIRED'
   | 'UNAUTHORIZED'
   | 'UNKNOWN'
@@ -70,14 +71,18 @@ export function sanitizeFilename(filename: string): string {
 }
 
 export function isBlockedFileExtension(filename: string): boolean {
-  return BLOCKED_FILE_EXTENSIONS.includes(getFileExtension(filename) as (typeof BLOCKED_FILE_EXTENSIONS)[number])
+  return BLOCKED_FILE_EXTENSIONS.includes(
+    getFileExtension(filename) as (typeof BLOCKED_FILE_EXTENSIONS)[number]
+  )
 }
 
 export function isValidShareId(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
-export function validateFileManifest(files: Array<Pick<File, 'name' | 'size' | 'type'>>): ValidationResult {
+export function validateFileManifest(
+  files: Array<Pick<File, 'name' | 'size' | 'type'>>
+): ValidationResult {
   if (files.length === 0) return { ok: false, code: 'NO_FILES' }
   if (files.length > MAX_FILES_PER_SHARE) return { ok: false, code: 'TOO_MANY_FILES' }
 
@@ -93,7 +98,9 @@ export function validateFileManifest(files: Array<Pick<File, 'name' | 'size' | '
   return { ok: true }
 }
 
-export function buildSafeFileManifest(files: Array<Pick<File, 'name' | 'size' | 'type'>>): BuildManifestResult {
+export function buildSafeFileManifest(
+  files: Array<Pick<File, 'name' | 'size' | 'type'>>
+): BuildManifestResult {
   const validation = validateFileManifest(files)
   if (!validation.ok) return validation
 
@@ -144,11 +151,15 @@ export function mapShareErrorMessage(code: string, filename?: string): string {
     case 'TOTAL_SIZE_EXCEEDED':
       return 'ขนาดไฟล์รวมต้องไม่เกิน 10 MB ต่อชุด'
     case 'BLOCKED_FILE_TYPE':
-      return filename ? `ไม่อนุญาตให้อัปโหลดไฟล์ชนิดนี้: ${filename}` : 'ไม่อนุญาตให้อัปโหลดไฟล์ชนิดนี้'
+      return filename
+        ? `ไม่อนุญาตให้อัปโหลดไฟล์ชนิดนี้: ${filename}`
+        : 'ไม่อนุญาตให้อัปโหลดไฟล์ชนิดนี้'
     case 'INVALID_SHARE_ID':
       return 'ลิงก์แชร์ไม่ถูกต้อง กรุณาตรวจสอบ QR Code หรือลิงก์อีกครั้ง'
     case 'SUPABASE_NOT_CONFIGURED':
       return 'ยังไม่ได้ตั้งค่าระบบฝากไฟล์ Supabase สำหรับเว็บไซต์นี้'
+    case 'SERVICE_UNREACHABLE':
+      return 'เชื่อมต่อเซิร์ฟเวอร์ฝากไฟล์ไม่ได้ในขณะนี้ ระบบหลังบ้านอาจถูกระงับการใช้งาน'
     case 'SESSION_EXPIRED':
       return 'ลิงก์แชร์หมดอายุหรือถูกลบแล้ว'
     case 'UNAUTHORIZED':

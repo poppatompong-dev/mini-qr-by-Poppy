@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import { isValidShareId } from '@/utils/fileShareValidation'
+import { isNetworkFailure } from '@/utils/shareApi'
 import { downloadBlob } from '@/utils/download'
 import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
 import { renderAsync as renderDocx } from 'docx-preview'
@@ -276,7 +277,9 @@ const fetchShareDetails = async () => {
     })
   } catch (err: any) {
     console.error('Failed to load share metadata:', err)
-    error.value = err.message || t('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
+    error.value = isNetworkFailure(err)
+      ? t('เชื่อมต่อเซิร์ฟเวอร์ไฟล์ไม่ได้ในขณะนี้ กรุณาลองใหม่ภายหลัง หรือติดต่อผู้ดูแลเว็บไซต์')
+      : err.message || t('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
   }
