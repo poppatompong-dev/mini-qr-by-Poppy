@@ -406,10 +406,48 @@ const currentPreviewType = computed(() => {
   const fn = currentPreviewFilename.value
   if (!fn) return 'other'
   const ext = fn.split('.').pop()?.toLowerCase() || ''
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return 'image'
-  if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio'
-  if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
-  if (['txt', 'md', 'json', 'js', 'ts', 'html', 'css'].includes(ext)) return 'text'
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif'].includes(ext))
+    return 'image'
+  if (['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba'].includes(ext))
+    return 'audio'
+  if (['mp4', 'webm', 'm4v', 'mov', 'avi', 'mkv', 'ogv'].includes(ext)) return 'video'
+  if (['csv', 'tsv'].includes(ext)) return 'csv'
+  if (['xlsx', 'xls', 'ods'].includes(ext)) return 'sheet'
+  if (
+    [
+      'txt',
+      'md',
+      'json',
+      'xml',
+      'yml',
+      'yaml',
+      'ini',
+      'conf',
+      'log',
+      'sql',
+      'js',
+      'ts',
+      'jsx',
+      'tsx',
+      'vue',
+      'html',
+      'htm',
+      'css',
+      'scss',
+      'py',
+      'java',
+      'c',
+      'h',
+      'cpp',
+      'cs',
+      'go',
+      'rs',
+      'php',
+      'rb',
+      'sh'
+    ].includes(ext)
+  )
+    return 'text'
   if (ext === 'pdf') return 'pdf'
   if (ext === 'docx') return 'docx'
   return 'other'
@@ -465,6 +503,112 @@ const loadTextContent = async (url: string) => {
   }
 }
 
+// Table preview state — CSV/TSV and spreadsheets render as a real table so the
+// recipient can read the data before deciding to download.
+const MAX_TABLE_ROWS = 300
+const MAX_TABLE_COLS = 30
+const tableRows = ref<string[][]>([])
+const tableLoading = ref(false)
+const tableError = ref(false)
+const tableTruncated = ref(false)
+const sheetNames = ref<string[]>([])
+
+// Audio/video the browser cannot decode fall back to a download prompt.
+const mediaError = ref(false)
+
+// Minimal RFC4180-ish parser: handles quoted fields, escaped quotes and CRLF.
+const parseDelimited = (content: string, delimiter: string): string[][] => {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') {
+          field += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        field += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === delimiter) {
+      row.push(field)
+      field = ''
+    } else if (ch === '\n') {
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ''
+    } else if (ch !== '\r') {
+      field += ch
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field)
+    rows.push(row)
+  }
+  return rows
+}
+
+const applyTableRows = (rows: string[][]) => {
+  tableTruncated.value = rows.length > MAX_TABLE_ROWS || rows.some((r) => r.length > MAX_TABLE_COLS)
+  tableRows.value = rows
+    .slice(0, MAX_TABLE_ROWS)
+    .map((r) => r.slice(0, MAX_TABLE_COLS).map((cell) => String(cell ?? '')))
+}
+
+const loadCsvTable = async (url: string, delimiter: string) => {
+  tableLoading.value = true
+  tableError.value = false
+  tableRows.value = []
+  sheetNames.value = []
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error()
+    applyTableRows(parseDelimited(await res.text(), delimiter))
+  } catch {
+    tableError.value = true
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+const loadSheetTable = async (filename: string) => {
+  tableLoading.value = true
+  tableError.value = false
+  tableRows.value = []
+  sheetNames.value = []
+  try {
+    const storageName = storageMap.value[filename] || filename
+    const { data, error: dlError } = await supabase.storage
+      .from('qr-files')
+      .download(`${storagePrefix.value}/${storageName}`)
+    if (dlError || !data) throw dlError
+    // SheetJS is heavy, so it is only fetched when a spreadsheet is previewed.
+    const XLSX = await import('xlsx')
+    const workbook = XLSX.read(await data.arrayBuffer(), { type: 'array' })
+    sheetNames.value = workbook.SheetNames
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+    const rows = XLSX.utils.sheet_to_json<string[]>(firstSheet, {
+      header: 1,
+      raw: false,
+      defval: ''
+    })
+    applyTableRows(rows)
+  } catch (err) {
+    console.error('Failed to render spreadsheet preview:', err)
+    tableError.value = true
+  } finally {
+    tableLoading.value = false
+  }
+}
+
 const renderDocxFile = async () => {
   if (!previewBlobUrl.value || !docxContainer.value) return
   docxLoading.value = true
@@ -493,9 +637,15 @@ const renderDocxFile = async () => {
 
 watch([currentPreviewIndex, isPreviewOpen], async () => {
   if (isPreviewOpen.value) {
+    mediaError.value = false
     const type = currentPreviewType.value
     if (type === 'text' && currentPreviewUrl.value) {
       await loadTextContent(currentPreviewUrl.value)
+    } else if (type === 'csv' && currentPreviewUrl.value) {
+      const delimiter = currentPreviewFilename.value.toLowerCase().endsWith('.tsv') ? '\t' : ','
+      await loadCsvTable(currentPreviewUrl.value, delimiter)
+    } else if (type === 'sheet') {
+      await loadSheetTable(currentPreviewFilename.value)
     } else if (type === 'image' || type === 'pdf' || type === 'docx') {
       await loadPreviewBlob(currentPreviewFilename.value)
     }
@@ -842,6 +992,7 @@ onMounted(() => {
                 :src="previewBlobUrl"
                 :alt="currentPreviewFilename"
                 class="max-h-[50vh] max-w-full rounded-lg object-contain shadow-md"
+                @error="previewError = true"
               />
             </div>
 
@@ -852,7 +1003,25 @@ onMounted(() => {
               >
                 <FileAudio class="size-7" />
               </div>
-              <audio controls class="w-full" :src="currentPreviewUrl"></audio>
+              <div v-if="mediaError" class="space-y-3">
+                <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                  {{ t('เบราว์เซอร์นี้เล่นไฟล์เสียงชนิดนี้ไม่ได้ กรุณาดาวน์โหลดเพื่อเปิดฟัง') }}
+                </p>
+                <button
+                  @click="handleDownloadSingle(currentPreviewFilename)"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-zinc-700 active:scale-95 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                >
+                  <Download class="size-3.5" />
+                  <span>{{ t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์' }}</span>
+                </button>
+              </div>
+              <audio
+                v-else
+                controls
+                class="w-full"
+                :src="currentPreviewUrl"
+                @error="mediaError = true"
+              ></audio>
             </div>
 
             <!-- Video Preview -->
@@ -860,10 +1029,29 @@ onMounted(() => {
               v-else-if="currentPreviewType === 'video'"
               class="flex max-h-full max-w-full items-center justify-center p-2"
             >
+              <div v-if="mediaError" class="w-full max-w-sm p-6 text-center">
+                <div
+                  class="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400"
+                >
+                  <FileVideo class="size-7" />
+                </div>
+                <p class="mb-3 text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                  {{ t('เบราว์เซอร์นี้เล่นวิดีโอชนิดนี้ไม่ได้ กรุณาดาวน์โหลดเพื่อเปิดชม') }}
+                </p>
+                <button
+                  @click="handleDownloadSingle(currentPreviewFilename)"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-zinc-700 active:scale-95 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                >
+                  <Download class="size-3.5" />
+                  <span>{{ t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์' }}</span>
+                </button>
+              </div>
               <video
+                v-else
                 controls
                 class="max-h-[50vh] max-w-full rounded-lg shadow-md"
                 :src="currentPreviewUrl"
+                @error="mediaError = true"
               ></video>
             </div>
 
@@ -950,6 +1138,90 @@ onMounted(() => {
                 ref="docxContainer"
                 class="w-full max-w-2xl overflow-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
               ></div>
+            </div>
+
+            <!-- Table Preview (CSV / TSV / Excel) -->
+            <div
+              v-else-if="currentPreviewType === 'csv' || currentPreviewType === 'sheet'"
+              class="size-full overflow-auto p-4"
+            >
+              <div
+                v-if="tableLoading"
+                class="flex h-full flex-col items-center justify-center py-10"
+              >
+                <Loader2 class="size-6 animate-spin text-blue-600 dark:text-blue-400" />
+                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  {{ t('กำลังโหลดข้อมูลตาราง...') }}
+                </p>
+              </div>
+              <div
+                v-else-if="tableError"
+                class="flex h-full flex-col items-center justify-center text-center"
+              >
+                <AlertCircle class="mb-2 size-6 text-red-500" />
+                <p class="mb-3 text-xs font-bold text-red-500">
+                  {{ t('ไม่สามารถแสดงตัวอย่างตารางนี้ได้') }}
+                </p>
+                <button
+                  @click="handleDownloadSingle(currentPreviewFilename)"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-zinc-700 active:scale-95 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                >
+                  <Download class="size-3.5" />
+                  <span>{{ t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์' }}</span>
+                </button>
+              </div>
+              <div
+                v-else-if="tableRows.length === 0"
+                class="flex h-full flex-col items-center justify-center text-center"
+              >
+                <FileSpreadsheet class="mb-2 size-6 text-zinc-400" />
+                <p class="text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                  {{ t('ไฟล์นี้ไม่มีข้อมูลตารางให้แสดง') }}
+                </p>
+              </div>
+              <div v-else class="space-y-2">
+                <div
+                  class="max-h-[50vh] overflow-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <table class="w-full border-collapse text-left text-[11px]">
+                    <tbody>
+                      <tr
+                        v-for="(row, rowIndex) in tableRows"
+                        :key="rowIndex"
+                        :class="
+                          rowIndex === 0
+                            ? 'bg-zinc-100 font-bold dark:bg-zinc-800'
+                            : rowIndex % 2 === 1
+                              ? 'bg-zinc-50/60 dark:bg-zinc-950/30'
+                              : ''
+                        "
+                      >
+                        <td
+                          v-for="(cell, cellIndex) in row"
+                          :key="cellIndex"
+                          class="max-w-[240px] truncate border border-zinc-200 px-2 py-1 text-zinc-700 dark:border-zinc-800 dark:text-zinc-300"
+                          :title="cell"
+                        >
+                          {{ cell }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p
+                  v-if="sheetNames.length > 1"
+                  class="text-center text-[10px] text-zinc-400 dark:text-zinc-500"
+                >
+                  {{ t('แสดงชีตแรก') }} "{{ sheetNames[0] }}" {{ t('จากทั้งหมด') }}
+                  {{ sheetNames.length }} {{ t('ชีต — ดาวน์โหลดไฟล์เพื่อดูครบทุกชีต') }}
+                </p>
+                <p
+                  v-if="tableTruncated"
+                  class="text-center text-[10px] text-zinc-400 dark:text-zinc-500"
+                >
+                  {{ t('แสดงข้อมูลบางส่วน — ดาวน์โหลดไฟล์เพื่อดูข้อมูลทั้งหมด') }}
+                </p>
+              </div>
             </div>
 
             <!-- Other Files Preview -->
