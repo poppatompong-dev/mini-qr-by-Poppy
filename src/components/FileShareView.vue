@@ -8,6 +8,7 @@ import { isNetworkFailure } from '@/utils/shareApi'
 import { downloadBlob } from '@/utils/download'
 import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
 import { isImageFilename } from '@/utils/imagePreview'
+import { resolveStorageName } from '@/utils/shareStorageNames'
 import { renderAsync as renderDocx } from 'docx-preview'
 import {
   ArrowLeft,
@@ -189,11 +190,6 @@ const docxContainer = ref<HTMLElement | null>(null)
 const docxLoading = ref(false)
 const docxError = ref(false)
 
-const getFileExtension = (filename: string): string => {
-  const parts = filename.split('.')
-  return parts.length > 1 ? `.${parts.pop()}` : ''
-}
-
 // Fetch log entry and map storage filenames
 const fetchShareDetails = async () => {
   if (!isSupabaseConfigured) {
@@ -252,15 +248,7 @@ const fetchShareDetails = async () => {
       if (storageFiles) {
         const fileNamesInStorage = storageFiles.map((f: any) => f.name)
         data.files_list.forEach((filename: string, index: number) => {
-          const ext = getFileExtension(filename)
-          const indexedName = `file_${index}${ext}`
-          if (fileNamesInStorage.includes(indexedName)) {
-            storageMap.value[filename] = indexedName
-          } else if (fileNamesInStorage.includes(filename)) {
-            storageMap.value[filename] = filename
-          } else {
-            storageMap.value[filename] = indexedName
-          }
+          storageMap.value[filename] = resolveStorageName(filename, index, fileNamesInStorage)
         })
       }
     } catch (storageErr) {
