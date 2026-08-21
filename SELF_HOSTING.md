@@ -131,7 +131,7 @@ Set these with `supabase secrets set` — they are **never** exposed to the brow
 | --------------------------- | ----------------------------------------------------------------- | ------------ |
 | `ADMIN_SECRET`              | Long random string required to access the admin panel             | _(required)_ |
 | `SHARE_EXPIRY_DAYS`         | Days before a share auto-expires                                  | `7`          |
-| `MAX_UPLOAD_BYTES`          | Max total upload size per share (bytes)                           | `10485760`   |
+| `MAX_UPLOAD_BYTES`          | Max total upload size per share (bytes)                           | `52428800`   |
 | `MAX_FILES_PER_SHARE`       | Max number of files per share                                     | `20`         |
 | `ORPHAN_GRACE_MINUTES`      | Grace period before abandoned `pending`/`failed` shares are reaped | `60`         |
 
@@ -152,7 +152,7 @@ supabase db push
 
 ```bash
 supabase secrets set ADMIN_SECRET="<long-random-secret>" SHARE_EXPIRY_DAYS=7 \
-  MAX_UPLOAD_BYTES=10485760 MAX_FILES_PER_SHARE=20
+  MAX_UPLOAD_BYTES=52428800 MAX_FILES_PER_SHARE=20
 
 supabase functions deploy share-session
 supabase functions deploy share-finalize

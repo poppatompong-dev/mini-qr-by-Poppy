@@ -6,7 +6,7 @@ import { createShareWithFiles, ShareApiError, checkShareServiceReachable } from 
 import {
   validateFileManifest,
   mapShareErrorMessage,
-  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_MB,
   MAX_FILES_PER_SHARE
 } from '@/utils/fileShareValidation'
 import {
@@ -162,7 +162,7 @@ const uploadProgressPercent = ref(0)
 // Privacy consent + share lifecycle display
 const privacyAccepted = ref(false)
 const shareExpiryDays = Number(import.meta.env.VITE_SHARE_EXPIRY_DAYS) || 7
-const maxUploadMb = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))
+const maxUploadMb = MAX_UPLOAD_MB
 const maxFilesPerShare = MAX_FILES_PER_SHARE
 
 const formatSize = (bytes: number) => {
@@ -1491,7 +1491,7 @@ const categories = [
                 {{ t('เลือกไฟล์ข้อมูล, ลากวาง หรือ กด Ctrl+V เพื่อวาง') }}
               </p>
               <p class="mt-1 text-[10px] text-zinc-400 dark:text-zinc-500">
-                {{ t('รองรับไฟล์หลากหลายขนาดรวมกันสูงสุด 10 MB') }}
+                {{ t('รองรับไฟล์หลากหลาย ขนาดรวมกันสูงสุด') }} {{ maxUploadMb }} MB
               </p>
             </div>
 

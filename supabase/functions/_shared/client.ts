@@ -32,7 +32,7 @@ export function getShareConfig(): ShareConfig {
   return {
     maxUploadBytes: getEnvInt(
       Deno.env.get('MAX_UPLOAD_BYTES'),
-      10 * 1024 * 1024,
+      50 * 1024 * 1024,
       1024,
       200 * 1024 * 1024
     ),

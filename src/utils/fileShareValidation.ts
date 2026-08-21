@@ -1,4 +1,5 @@
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+export const MAX_UPLOAD_MB = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))
 export const MAX_FILES_PER_SHARE = 20
 export const MAX_FILENAME_LENGTH = 120
 
@@ -149,7 +150,7 @@ export function mapShareErrorMessage(code: string, filename?: string): string {
     case 'TOO_MANY_FILES':
       return `อัปโหลดได้สูงสุด ${MAX_FILES_PER_SHARE} ไฟล์ต่อชุด`
     case 'TOTAL_SIZE_EXCEEDED':
-      return 'ขนาดไฟล์รวมต้องไม่เกิน 10 MB ต่อชุด'
+      return `ขนาดไฟล์รวมต้องไม่เกิน ${MAX_UPLOAD_MB} MB ต่อชุด`
     case 'BLOCKED_FILE_TYPE':
       return filename
         ? `ไม่อนุญาตให้อัปโหลดไฟล์ชนิดนี้: ${filename}`
