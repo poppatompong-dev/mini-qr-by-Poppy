@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '@/utils/supabase'
@@ -687,8 +687,28 @@ const closePreview = () => {
   }
 }
 
+// The preview is a full-screen overlay, so Escape has to close it and the arrow
+// keys should walk the same way the Back/Next buttons do — without them the
+// overlay traps the reader on whichever file they opened.
+const handlePreviewKeys = (event: KeyboardEvent) => {
+  if (!isPreviewOpen.value) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closePreview()
+  } else if (event.key === 'ArrowRight') {
+    nextPreview()
+  } else if (event.key === 'ArrowLeft') {
+    prevPreview()
+  }
+}
+
 onMounted(() => {
   fetchShareDetails()
+  window.addEventListener('keydown', handlePreviewKeys)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handlePreviewKeys)
 })
 </script>
 
