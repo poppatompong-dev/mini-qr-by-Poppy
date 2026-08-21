@@ -52,3 +52,6 @@ scratch/
 # Vitest browser-mode failure screenshots
 __screenshots__/
 .env*
+
+# Supabase CLI local state
+supabase/.temp/
