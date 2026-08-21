@@ -7,6 +7,7 @@ import { isValidShareId } from '@/utils/fileShareValidation'
 import { isNetworkFailure } from '@/utils/shareApi'
 import { downloadBlob } from '@/utils/download'
 import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
+import { isImageFilename } from '@/utils/imagePreview'
 import { renderAsync as renderDocx } from 'docx-preview'
 import {
   ArrowLeft,
@@ -180,6 +181,10 @@ const getFileTypeMeta = (filename: string) => {
 // Storage filename mapping
 const storageMap = ref<Record<string, string>>({})
 const pdfThumbnails = ref<Record<string, string>>({})
+// Filenames whose thumbnail failed to render (unsupported codec, 404, dead
+// object URL). They fall back to the generic file icon instead of leaving a
+// broken-image glyph in the row.
+const thumbnailFailed = ref<Record<string, boolean>>({})
 const docxContainer = ref<HTMLElement | null>(null)
 const docxLoading = ref(false)
 const docxError = ref(false)
@@ -817,10 +822,15 @@ onMounted(() => {
                   class="dark:border-zinc-850 flex size-8 shrink-0 select-none items-center justify-center overflow-hidden rounded-xl border border-zinc-200/60 bg-zinc-50/50 dark:bg-zinc-950 sm:size-9"
                 >
                   <img
-                    v-if="getFileTypeMeta(filename).label === 'IMG' && getFileUrl(filename)"
+                    v-if="
+                      isImageFilename(filename) &&
+                      !thumbnailFailed[filename] &&
+                      getFileUrl(filename)
+                    "
                     :src="getFileUrl(filename)"
                     class="size-full object-cover"
                     alt="thumbnail"
+                    @error="thumbnailFailed[filename] = true"
                   />
                   <img
                     v-else-if="filename.toLowerCase().endsWith('.pdf') && pdfThumbnails[filename]"

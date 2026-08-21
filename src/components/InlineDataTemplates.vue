@@ -22,6 +22,7 @@ import {
   generateWifiData
 } from '@/utils/dataEncoding'
 import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
+import { isImageFile } from '@/utils/imagePreview'
 import {
   Link,
   Wifi,
@@ -210,9 +211,19 @@ const triggerFileInput = () => {
   filesInputRef.value?.click()
 }
 
+// A format the browser cannot decode (HEIC on Chrome, TIFF almost anywhere)
+// leaves a broken-image glyph in the row, so drop the preview and let the
+// generic file icon take over.
+const handleThumbnailError = (item: { previewUrl?: string }) => {
+  if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(item.previewUrl)
+  }
+  item.previewUrl = undefined
+}
+
 const addFilesToList = (files: File[]) => {
   const mapped = files.map((file) => {
-    const isImage = file.type.startsWith('image/')
+    const isImage = isImageFile(file)
     const previewUrl = isImage ? URL.createObjectURL(file) : undefined
     const item = {
       id: window.crypto.randomUUID(),
@@ -1597,6 +1608,7 @@ const categories = [
                         :src="item.previewUrl"
                         class="size-full object-cover"
                         alt="preview"
+                        @error="handleThumbnailError(item)"
                       />
                       <!-- Beautiful mock document thumbnail for non-image files -->
                       <div

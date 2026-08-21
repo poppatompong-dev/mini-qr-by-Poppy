@@ -1,27 +1,29 @@
-let pdfjsPromise: Promise<any> | null = null
+// pdf.js is bundled with the app rather than pulled from a CDN at runtime, so a
+// thumbnail only needs the origin the page already came from — no third party to
+// be blocked by an ad blocker, a corporate proxy or a network that cannot reach
+// cdnjs. A failed CDN script used to leave every PDF row showing the generic
+// icon with nothing but a console error to explain it.
+//
+// The worker is emitted as its own asset and fetched on demand. It is not in the
+// service worker precache (globPatterns in vite.config.js covers js, not mjs),
+// so thumbnails still need the network on a cold cache — deliberate, since
+// precaching it would add ~1.3 MB to every first install.
+let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null
 
-const loadPdfJs = (): Promise<any> => {
+const loadPdfJs = (): Promise<typeof import('pdfjs-dist')> => {
   if (pdfjsPromise) return pdfjsPromise
 
-  pdfjsPromise = new Promise((resolve, reject) => {
-    if ((window as any).pdfjsLib) {
-      resolve((window as any).pdfjsLib)
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
-    script.onload = () => {
-      const pdfjsLib = (window as any).pdfjsLib
-      // Configure worker from CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-      resolve(pdfjsLib)
-    }
-    script.onerror = (err) => {
-      pdfjsPromise = null
-      reject(err)
-    }
-    document.head.appendChild(script)
+  pdfjsPromise = (async () => {
+    const pdfjsLib = await import('pdfjs-dist')
+    // Vite resolves this to a hashed asset URL and emits the worker as its own
+    // file, so it is precached by the service worker along with the bundle.
+    const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+    return pdfjsLib
+  })().catch((err) => {
+    // Let the next call retry instead of caching the rejection forever.
+    pdfjsPromise = null
+    throw err
   })
 
   return pdfjsPromise
@@ -35,22 +37,15 @@ const loadPdfJs = (): Promise<any> => {
 export const generatePdfThumbnail = async (fileOrUrl: File | string): Promise<string> => {
   try {
     const pdfjsLib = await loadPdfJs()
-    let pdfData: any
 
-    if (typeof fileOrUrl === 'string') {
-      pdfData = fileOrUrl
-    } else {
-      const arrayBuffer = await fileOrUrl.arrayBuffer()
-      pdfData = new Uint8Array(arrayBuffer)
-    }
-
-    const loadingTask = pdfjsLib.getDocument({
-      data: typeof pdfData === 'string' ? undefined : pdfData,
-      url: typeof pdfData === 'string' ? pdfData : undefined,
-      // Disable range requests/stream for smoother loading of remote/local files
-      disableRange: true,
-      disableStream: true
-    })
+    const loadingTask =
+      typeof fileOrUrl === 'string'
+        ? pdfjsLib.getDocument({ url: fileOrUrl, disableRange: true, disableStream: true })
+        : pdfjsLib.getDocument({
+            data: new Uint8Array(await fileOrUrl.arrayBuffer()),
+            disableRange: true,
+            disableStream: true
+          })
 
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
@@ -66,14 +61,14 @@ export const generatePdfThumbnail = async (fileOrUrl: File | string): Promise<st
 
     await page.render({
       canvasContext: context,
-      viewport: viewport
+      viewport
     }).promise
 
     const dataUrl = canvas.toDataURL('image/png')
-    
+
     // Clean up PDF resources
     await pdf.destroy()
-    
+
     return dataUrl
   } catch (err) {
     console.error('Failed to generate PDF thumbnail:', err)
