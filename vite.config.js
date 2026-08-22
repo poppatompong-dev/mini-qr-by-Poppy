@@ -84,8 +84,24 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,svg,png,jpg,jpeg,gif,ico,woff,woff2}'], // Removed html from patterns
-          // Exclude large files from precaching and HTML files to avoid base path issues
-          globIgnores: ['**/app_preview.*', '**/presets/*.svg', '**/*.html'],
+          // Exclude large files from precaching and HTML files to avoid base path issues.
+          //
+          // The feature chunks are left out on purpose. Somebody opening a share
+          // link needs the PDF renderer within a second or two, and while the
+          // service worker was installing that chunk had to be fetched in
+          // competition with 4.5 MB of precache traffic on the same origin - the
+          // preview sat on its spinner for twenty seconds on a first visit. Off
+          // the precache list they load on demand at the priority the page asked
+          // for, and the runtime cache below still keeps them afterwards.
+          globIgnores: [
+            '**/app_preview.*',
+            '**/presets/*.svg',
+            '**/*.html',
+            '**/assets/pdf-*.js',
+            '**/assets/xlsx-*.js',
+            '**/app_icons/web/splash-*.png',
+            '**/miniqr_extract.png'
+          ],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
           // Don't precache index.html to avoid base path issues
           dontCacheBustURLsMatching: /\.\w{8}\./,
@@ -101,6 +117,20 @@ export default defineConfig(({ mode }) => {
                 expiration: {
                   maxEntries: 10,
                   maxAgeSeconds: 86400 // 1 day
+                }
+              }
+            },
+            {
+              // The chunks kept off the precache list, plus the pdf.js worker,
+              // which was never precached because globPatterns does not cover
+              // .mjs. Cached on first use, so only the very first visit pays.
+              urlPattern: /\/assets\/(pdf|xlsx)[-.][^/]*\.(js|mjs)$/,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'feature-chunks',
+                expiration: {
+                  maxEntries: 12,
+                  maxAgeSeconds: 2592000 // 30 days
                 }
               }
             }
