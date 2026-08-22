@@ -138,14 +138,15 @@ Set these with `supabase secrets set` — they are **never** exposed to the brow
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by the
 Supabase platform for deployed functions.
 
-### 3. Apply the database migration
+### 3. Apply the database migrations
 
-Run the migration to create the hardened schema, RLS policies, storage policies,
-and the admin audit log:
+Run every migration in `supabase/migrations/` to create the hardened schema, RLS
+policies, storage policies, the admin audit log, and the per-share settings
+columns:
 
 ```bash
 supabase db push
-# or paste supabase/migrations/0001_harden_qr_files_log.sql into the SQL Editor
+# or paste each file in supabase/migrations/ into the SQL Editor, in order
 ```
 
 ### 4. Deploy the Edge Functions
