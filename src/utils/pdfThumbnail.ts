@@ -10,10 +10,41 @@
 // precaching it would add ~1.3 MB to every first install.
 let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null
 
+const withCap = (promise: Promise<unknown>, ms: number) =>
+  Promise.race([promise, new Promise((resolve) => setTimeout(resolve, ms))])
+
+/**
+ * A pdf.js worker started while the service worker is still installing does not
+ * finish its handshake for the best part of a minute: on a first visit the
+ * thumbnails and any preview opened alongside them sat on their spinner while
+ * the very same call, made a moment later, returned in under 200ms. Wait for
+ * the page to finish loading and for the registration to settle before touching
+ * pdf.js at all.
+ *
+ * Every wait is capped, and a page with no service worker at all — the dev
+ * server — falls straight through, since `navigator.serviceWorker.ready` would
+ * otherwise never resolve.
+ */
+const whenSafeToStartPdfJs = async (): Promise<void> => {
+  if (document.readyState !== 'complete') {
+    await withCap(
+      new Promise<void>((resolve) =>
+        window.addEventListener('load', () => resolve(), { once: true })
+      ),
+      5000
+    )
+  }
+  if (!('serviceWorker' in navigator) || navigator.serviceWorker.controller) return
+  const registrations = await navigator.serviceWorker.getRegistrations().catch(() => [])
+  if (registrations.length === 0) return
+  await withCap(navigator.serviceWorker.ready, 5000)
+}
+
 const loadPdfJs = (): Promise<typeof import('pdfjs-dist')> => {
   if (pdfjsPromise) return pdfjsPromise
 
   pdfjsPromise = (async () => {
+    await whenSafeToStartPdfJs()
     const pdfjsLib = await import('pdfjs-dist')
     // Vite resolves this to a hashed asset URL and emits the worker as its own
     // file, fetched from this origin the first time a PDF is opened.
@@ -66,19 +97,37 @@ const queuePdfJob = <T>(task: () => Promise<T>): Promise<T> =>
     pumpPdfQueue()
   })
 
-// A worker that never completes its handshake leaves the caller waiting on a
-// promise that will not settle, which reads to the user as a spinner that never
-// stops. Fail loudly instead so the UI can show its error state.
-const PDF_LOAD_TIMEOUT_MS = 30000
+// A worker that stalls leaves the caller waiting on a promise that may not
+// settle for the best part of a minute, which the UI can only render as a
+// spinner that never stops. Give up quickly and start over instead: a second
+// attempt runs against a page that has had time to settle and returns in
+// milliseconds.
+// A thumbnail is one small page and has no business taking this long. The
+// preview may have a dozen scanned pages to rasterise on a phone, so it gets a
+// budget that a slow-but-working render can still finish inside.
+const THUMBNAIL_TIMEOUT_MS = 12000
+const PREVIEW_TIMEOUT_MS = 30000
 
-const withTimeout = <T>(promise: Promise<T>, label: string): Promise<T> => {
+const withTimeout = <T>(run: () => Promise<T>, label: string, ms: number): Promise<T> => {
   let timer: ReturnType<typeof setTimeout>
   return Promise.race([
-    promise,
+    run(),
     new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${label} timed out`)), PDF_LOAD_TIMEOUT_MS)
+      timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms)
     })
   ]).finally(() => clearTimeout(timer)) as Promise<T>
+}
+
+const withRetry = async <T>(run: () => Promise<T>, label: string, ms: number): Promise<T> => {
+  try {
+    return await withTimeout(run, label, ms)
+  } catch (err) {
+    if (!(err instanceof Error) || !err.message.endsWith('timed out')) throw err
+    // Rebuild the pdf.js setup so the retry gets a fresh worker rather than
+    // queueing behind whatever the first attempt is still waiting on.
+    pdfjsPromise = null
+    return withTimeout(run, `${label} (retry)`, ms)
+  }
 }
 
 /**
@@ -87,47 +136,51 @@ const withTimeout = <T>(promise: Promise<T>, label: string): Promise<T> => {
  * @returns A promise resolving to a PNG Data URL.
  */
 export const generatePdfThumbnail = (fileOrUrl: File | string): Promise<string> =>
-  queuePdfJob(async () => {
-    try {
-      const pdfjsLib = await loadPdfJs()
+  queuePdfJob(() =>
+    withRetry(
+      async () => {
+        const pdfjsLib = await loadPdfJs()
 
-      const loadingTask =
-        typeof fileOrUrl === 'string'
-          ? pdfjsLib.getDocument({ url: fileOrUrl, disableRange: true, disableStream: true })
-          : pdfjsLib.getDocument({
-              data: new Uint8Array(await fileOrUrl.arrayBuffer()),
-              disableRange: true,
-              disableStream: true
-            })
+        const loadingTask =
+          typeof fileOrUrl === 'string'
+            ? pdfjsLib.getDocument({ url: fileOrUrl, disableRange: true, disableStream: true })
+            : pdfjsLib.getDocument({
+                data: new Uint8Array(await fileOrUrl.arrayBuffer()),
+                disableRange: true,
+                disableStream: true
+              })
 
-      const pdf = await withTimeout(loadingTask.promise, 'PDF thumbnail')
-      const page = await pdf.getPage(1)
+        const pdf = await loadingTask.promise
+        const page = await pdf.getPage(1)
 
-      // Render at a low scale for thumbnail purposes
-      const viewport = page.getViewport({ scale: 0.4 })
-      const canvas = document.createElement('canvas')
-      const context = canvas.getContext('2d')
-      if (!context) throw new Error('Canvas context not available')
+        // Render at a low scale for thumbnail purposes
+        const viewport = page.getViewport({ scale: 0.4 })
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Canvas context not available')
 
-      canvas.height = viewport.height
-      canvas.width = viewport.width
+        canvas.height = viewport.height
+        canvas.width = viewport.width
 
-      await page.render({
-        canvasContext: context,
-        viewport
-      }).promise
+        await page.render({
+          canvasContext: context,
+          viewport
+        }).promise
 
-      const dataUrl = canvas.toDataURL('image/png')
+        const dataUrl = canvas.toDataURL('image/png')
 
-      // Clean up PDF resources
-      await pdf.destroy()
+        // Clean up PDF resources
+        await pdf.destroy()
 
-      return dataUrl
-    } catch (err) {
+        return dataUrl
+      },
+      'PDF thumbnail',
+      THUMBNAIL_TIMEOUT_MS
+    ).catch((err) => {
       console.error('Failed to generate PDF thumbnail:', err)
       throw err
-    }
-  })
+    })
+  )
 
 /**
  * Renders a PDF into `container` as one canvas per page, each sized to
@@ -147,50 +200,52 @@ export const renderPdfPages = (
   options: { targetWidth: number; maxPages?: number; signal?: { cancelled: boolean } }
 ): Promise<{ pageCount: number; renderedPages: number }> =>
   // Deliberately not queued — see the note on queuePdfJob.
-  (async () => {
-    const pdfjsLib = await loadPdfJs()
-    const pdf = await withTimeout(
-      pdfjsLib.getDocument({ url, disableRange: true, disableStream: true }).promise,
-      'PDF preview'
-    )
+  withRetry(
+    async () => {
+      const pdfjsLib = await loadPdfJs()
+      const pdf = await pdfjsLib.getDocument({ url, disableRange: true, disableStream: true })
+        .promise
 
-    try {
-      const maxPages = options.maxPages ?? 30
-      const pageCount = pdf.numPages
-      const renderedPages = Math.min(pageCount, maxPages)
-      // Phones are memory-tight; a device pixel ratio of 3 would triple the
-      // canvas area for no visible gain at this size.
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const targetWidth = Math.max(options.targetWidth, 200)
+      try {
+        const maxPages = options.maxPages ?? 30
+        const pageCount = pdf.numPages
+        const renderedPages = Math.min(pageCount, maxPages)
+        // Phones are memory-tight; a device pixel ratio of 3 would triple the
+        // canvas area for no visible gain at this size.
+        const dpr = Math.min(window.devicePixelRatio || 1, 2)
+        const targetWidth = Math.max(options.targetWidth, 200)
 
-      container.innerHTML = ''
+        container.innerHTML = ''
 
-      for (let pageNumber = 1; pageNumber <= renderedPages; pageNumber++) {
-        if (options.signal?.cancelled) break
-        const page = await pdf.getPage(pageNumber)
-        const baseViewport = page.getViewport({ scale: 1 })
-        const scale = (targetWidth / baseViewport.width) * dpr
-        const viewport = page.getViewport({ scale })
+        for (let pageNumber = 1; pageNumber <= renderedPages; pageNumber++) {
+          if (options.signal?.cancelled) break
+          const page = await pdf.getPage(pageNumber)
+          const baseViewport = page.getViewport({ scale: 1 })
+          const scale = (targetWidth / baseViewport.width) * dpr
+          const viewport = page.getViewport({ scale })
 
-        const canvas = document.createElement('canvas')
-        const context = canvas.getContext('2d')
-        if (!context) throw new Error('Canvas context not available')
-        canvas.width = Math.floor(viewport.width)
-        canvas.height = Math.floor(viewport.height)
-        canvas.style.width = '100%'
-        canvas.style.height = 'auto'
-        canvas.style.display = 'block'
-        canvas.setAttribute('role', 'img')
-        canvas.setAttribute('aria-label', `PDF page ${pageNumber}`)
+          const canvas = document.createElement('canvas')
+          const context = canvas.getContext('2d')
+          if (!context) throw new Error('Canvas context not available')
+          canvas.width = Math.floor(viewport.width)
+          canvas.height = Math.floor(viewport.height)
+          canvas.style.width = '100%'
+          canvas.style.height = 'auto'
+          canvas.style.display = 'block'
+          canvas.setAttribute('role', 'img')
+          canvas.setAttribute('aria-label', `PDF page ${pageNumber}`)
 
-        await page.render({ canvasContext: context, viewport }).promise
-        if (options.signal?.cancelled) break
-        container.appendChild(canvas)
-        page.cleanup()
+          await page.render({ canvasContext: context, viewport }).promise
+          if (options.signal?.cancelled) break
+          container.appendChild(canvas)
+          page.cleanup()
+        }
+
+        return { pageCount, renderedPages }
+      } finally {
+        await pdf.destroy()
       }
-
-      return { pageCount, renderedPages }
-    } finally {
-      await pdf.destroy()
-    }
-  })()
+    },
+    'PDF preview',
+    PREVIEW_TIMEOUT_MS
+  )
