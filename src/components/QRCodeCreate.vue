@@ -82,7 +82,7 @@ import {
   type ErrorCorrectionLevel,
   type Options as StyledQRCodeProps
 } from '@/lib/qr-code'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import 'vue-i18n'
 import { useI18n } from 'vue-i18n'
 
@@ -1367,19 +1367,49 @@ const activeTabDescription = computed(() => {
   }
 })
 
-const activeTabLeft = computed(() => {
-  switch (activeStyleTab.value) {
-    case 'datatype':
-      return '2px'
-    case 'style':
-      return 'calc(25% + 1px)'
-    case 'eyestyle':
-      return 'calc(50% + 1px)'
-    case 'logo':
-      return 'calc(75% + 1px)'
-    default:
-      return '2px'
+// The highlight pill used to be positioned with hard-coded quarters, which
+// pinned the strip to four columns on every screen. Four Thai labels do not fit
+// across a phone, so "กรอบและหัวอ่าน" wrapped onto a second line while its
+// neighbours sat on one. Measuring the active tab instead lets the strip be two
+// columns on a phone and four from `sm` up, with the pill following either way.
+const styleTabBar = ref<HTMLElement | null>(null)
+const styleTabButtons = ref<Record<string, HTMLElement | null>>({})
+
+const setStyleTabRef = (name: string) => (el: unknown) => {
+  styleTabButtons.value[name] = (el as HTMLElement | null) ?? null
+}
+
+const activeTabPill = ref({ left: '0px', top: '0px', width: '0px', height: '0px' })
+
+const measureActiveTab = () => {
+  const button = styleTabButtons.value[activeStyleTab.value]
+  if (!button) return
+  activeTabPill.value = {
+    left: `${button.offsetLeft}px`,
+    top: `${button.offsetTop}px`,
+    width: `${button.offsetWidth}px`,
+    height: `${button.offsetHeight}px`
   }
+}
+
+let styleTabObserver: ResizeObserver | null = null
+
+watch(activeStyleTab, () => nextTick(measureActiveTab))
+
+onMounted(() => {
+  nextTick(measureActiveTab)
+  // Web fonts and the breakpoint switch both change the tab sizes after the
+  // first paint, and the strip is inside a collapsible panel, so watch the
+  // element rather than the window.
+  if (styleTabBar.value && typeof ResizeObserver !== 'undefined') {
+    styleTabObserver = new ResizeObserver(() => measureActiveTab())
+    styleTabObserver.observe(styleTabBar.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  styleTabObserver?.disconnect()
+  styleTabObserver = null
 })
 
 const showRawDataCopied = ref(false)
@@ -1969,23 +1999,27 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
 
         <!-- Tabs Header Bar -->
         <div
-          class="no-scrollbar relative mb-5 grid grid-cols-4 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60"
+          ref="styleTabBar"
+          class="no-scrollbar relative mb-5 grid grid-cols-2 gap-1 border-b border-zinc-200/60 p-0.5 pb-2 dark:border-zinc-800/60 sm:grid-cols-4"
         >
           <!-- Sliding Tab Background Pill -->
           <div
-            class="duration-350 dark:bg-zinc-850 absolute bottom-2.5 top-0.5 rounded-lg bg-zinc-100 transition-all"
+            class="duration-350 dark:bg-zinc-850 pointer-events-none absolute rounded-lg bg-zinc-100 transition-all"
             :style="{
-              left: activeTabLeft,
-              width: 'calc(25% - 2px)',
+              left: activeTabPill.left,
+              top: activeTabPill.top,
+              width: activeTabPill.width,
+              height: activeTabPill.height,
               transitionTimingFunction: 'var(--ease-out-expo)'
             }"
           ></div>
 
           <button
             type="button"
+            :ref="setStyleTabRef('datatype')"
             @click="activeStyleTab = 'datatype'"
             :class="[
-              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
+              'relative z-10 px-1 py-1.5 text-center text-[11px] font-bold leading-tight outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'datatype'
                 ? 'text-zinc-900 dark:text-zinc-100'
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
@@ -1995,9 +2029,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </button>
           <button
             type="button"
+            :ref="setStyleTabRef('style')"
             @click="activeStyleTab = 'style'"
             :class="[
-              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
+              'relative z-10 px-1 py-1.5 text-center text-[11px] font-bold leading-tight outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'style'
                 ? 'text-zinc-900 dark:text-zinc-100'
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
@@ -2007,9 +2042,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </button>
           <button
             type="button"
+            :ref="setStyleTabRef('eyestyle')"
             @click="activeStyleTab = 'eyestyle'"
             :class="[
-              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
+              'relative z-10 px-1 py-1.5 text-center text-[11px] font-bold leading-tight outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'eyestyle'
                 ? 'text-zinc-900 dark:text-zinc-100'
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
@@ -2019,9 +2055,10 @@ const onFilenameKeypress = (event: KeyboardEvent) => {
           </button>
           <button
             type="button"
+            :ref="setStyleTabRef('logo')"
             @click="activeStyleTab = 'logo'"
             :class="[
-              'relative z-10 px-1 py-1.5 text-center text-[10px] font-bold outline-none transition-colors duration-300 sm:text-xs',
+              'relative z-10 px-1 py-1.5 text-center text-[11px] font-bold leading-tight outline-none transition-colors duration-300 sm:text-xs',
               activeStyleTab === 'logo'
                 ? 'text-zinc-900 dark:text-zinc-100'
                 : 'hover:text-zinc-650 text-zinc-400 dark:hover:text-zinc-300'
