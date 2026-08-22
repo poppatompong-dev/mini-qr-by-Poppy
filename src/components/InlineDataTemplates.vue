@@ -151,6 +151,9 @@ const showNoteEditor = ref(false)
 const noteTitle = ref('')
 const noteContent = ref('')
 const customZipName = ref('')
+// Recipients on phones often have no way to open a .zip, so the creator can
+// withhold the bulk button and leave only per-file downloads.
+const allowBulkDownload = ref(true)
 
 const uploadSuccess = ref(false)
 const uploadedShareUrl = ref('')
@@ -196,6 +199,7 @@ const resetUploadState = () => {
   })
   filesToUpload.value = []
   customZipName.value = ''
+  allowBulkDownload.value = true
   uploadSuccess.value = false
   uploadedShareUrl.value = ''
   uploadError.value = ''
@@ -614,6 +618,7 @@ const handleFileUploadWorkflow = async () => {
   try {
     const result = await createShareWithFiles(files, {
       fileName: cleanCustomName,
+      allowBulkDownload: allowBulkDownload.value,
       onProgress: (percent, name, index) => {
         uploadProgressPercent.value = percent
         currentUploadingFileIndex.value = index
@@ -1659,35 +1664,67 @@ const categories = [
                 </div>
               </div>
 
-              <!-- ZIP Configuration Option (Naming) -->
+              <!-- ZIP Configuration Option (bulk switch + naming) -->
               <div
-                class="space-y-1.5 rounded-xl border border-zinc-200/60 bg-zinc-50/40 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/10"
+                class="space-y-3 rounded-xl border border-zinc-200/60 bg-zinc-50/40 p-3 dark:border-zinc-800/60 dark:bg-zinc-900/10"
               >
-                <label
-                  class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
-                >
-                  {{
-                    t('ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)') ||
-                    'ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)'
-                  }}
-                </label>
-                <div class="relative flex items-center">
+                <label class="flex cursor-pointer items-start gap-2.5">
                   <input
-                    type="text"
-                    v-model="customZipName"
-                    @keypress="onFilenameKeypress"
+                    type="checkbox"
+                    v-model="allowBulkDownload"
                     :disabled="uploading"
-                    placeholder="archive"
-                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 pr-10 text-xs font-semibold text-zinc-800 outline-none focus:border-blue-500 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    class="mt-0.5 size-4 shrink-0 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 dark:border-zinc-700"
                   />
-                  <span class="absolute right-3 font-mono text-[10px] text-zinc-400">.zip</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-zinc-700 dark:text-zinc-200">
+                      {{
+                        t('เปิดปุ่มดาวน์โหลดไฟล์ทั้งหมด (ZIP)') ||
+                        'เปิดปุ่มดาวน์โหลดไฟล์ทั้งหมด (ZIP)'
+                      }}
+                    </span>
+                    <span
+                      class="text-zinc-450 mt-0.5 block text-[10px] leading-relaxed dark:text-zinc-500"
+                    >
+                      {{
+                        t(
+                          'ปิดไว้ถ้าผู้รับส่วนใหญ่ใช้มือถือ เพราะมือถือมักเปิดไฟล์ ZIP ไม่ได้ ผู้รับจะดาวน์โหลดทีละไฟล์แทน'
+                        ) ||
+                        'ปิดไว้ถ้าผู้รับส่วนใหญ่ใช้มือถือ เพราะมือถือมักเปิดไฟล์ ZIP ไม่ได้ ผู้รับจะดาวน์โหลดทีละไฟล์แทน'
+                      }}
+                    </span>
+                  </span>
+                </label>
+
+                <div
+                  class="space-y-1.5 border-t border-zinc-200/60 pt-3 transition-opacity dark:border-zinc-800/60"
+                  :class="allowBulkDownload ? '' : 'pointer-events-none opacity-40'"
+                >
+                  <label
+                    class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                  >
+                    {{
+                      t('ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)') ||
+                      'ตั้งชื่อไฟล์ ZIP ดาวน์โหลด (ไม่บังคับ)'
+                    }}
+                  </label>
+                  <div class="relative flex items-center">
+                    <input
+                      type="text"
+                      v-model="customZipName"
+                      @keypress="onFilenameKeypress"
+                      :disabled="uploading || !allowBulkDownload"
+                      placeholder="archive"
+                      class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 pr-10 text-xs font-semibold text-zinc-800 outline-none focus:border-blue-500 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    />
+                    <span class="absolute right-3 font-mono text-[10px] text-zinc-400">.zip</span>
+                  </div>
+                  <p class="text-zinc-450 text-[9px] leading-relaxed dark:text-zinc-500">
+                    💡
+                    {{
+                      t('ช่วยให้ผู้ดาวน์โหลดได้รับชื่อไฟล์ ZIP ที่มีความหมาย แทนชื่อ UUID แบบสุ่ม')
+                    }}
+                  </p>
                 </div>
-                <p class="text-zinc-450 text-[9px] leading-relaxed dark:text-zinc-500">
-                  💡
-                  {{
-                    t('ช่วยให้ผู้ดาวน์โหลดได้รับชื่อไฟล์ ZIP ที่มีความหมาย แทนชื่อ UUID แบบสุ่ม')
-                  }}
-                </p>
               </div>
 
               <!-- Size details & Upload Button -->

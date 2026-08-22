@@ -7,7 +7,7 @@
 // `ready` so it becomes publicly readable. If verification fails the record is
 // marked `failed` and the partial objects are cleaned up.
 //
-// Request  (POST):  { shareId, fileName?, shareUrl? }
+// Request  (POST):  { shareId, fileName?, shareUrl?, allowBulkDownload? }
 // Response (200):   { shareId, status: 'ready', expiresAt }
 
 import { handleCors, corsHeaders } from '../_shared/cors.ts'
@@ -38,7 +38,12 @@ Deno.serve(async (request: Request) => {
     return jsonError('METHOD_NOT_ALLOWED', 'Only POST is allowed', 405)
   }
 
-  let body: { shareId?: string; fileName?: string; shareUrl?: string }
+  let body: {
+    shareId?: string
+    fileName?: string
+    shareUrl?: string
+    allowBulkDownload?: boolean
+  }
   try {
     body = await request.json()
   } catch {
@@ -118,6 +123,11 @@ Deno.serve(async (request: Request) => {
     if (safeShareUrl) update.file_url = safeShareUrl
     if (typeof body.fileName === 'string' && body.fileName.trim()) {
       update.file_name = body.fileName.trim().slice(0, 200)
+    }
+    // Only an explicit boolean flips the flag; an older client that omits it
+    // keeps the column default (bulk download allowed).
+    if (typeof body.allowBulkDownload === 'boolean') {
+      update.allow_bulk_download = body.allowBulkDownload
     }
 
     const { error: updateError } = await client

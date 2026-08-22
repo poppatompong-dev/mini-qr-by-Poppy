@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured, supabaseUrl } from '@/utils/supabase'
+import { supabase, isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from '@/utils/supabase'
 import { buildSafeFileManifest, type SafeFileManifestItem } from '@/utils/fileShareValidation'
 
 const STORAGE_BUCKET = 'qr-files'
@@ -61,8 +61,13 @@ export function isNetworkFailure(err: unknown): boolean {
 
 /**
  * Quick reachability probe for the Supabase project host. A paused/deleted
- * project fails at the DNS level, so even an opaque no-cors response proves
- * the service is alive.
+ * project fails at the DNS level, so any HTTP answer at all — whatever the
+ * status — proves the service is alive.
+ *
+ * The key travels in the header even though the status is ignored: without it
+ * the health endpoint answers 401, and the browser logs every probe as a failed
+ * request in the console. The anon key is public by design and already ships in
+ * the bundle.
  */
 export async function checkShareServiceReachable(timeoutMs = 5000): Promise<boolean> {
   if (!isSupabaseConfigured) return false
@@ -70,8 +75,8 @@ export async function checkShareServiceReachable(timeoutMs = 5000): Promise<bool
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     await fetch(`${supabaseUrl}/auth/v1/health`, {
-      mode: 'no-cors',
       cache: 'no-store',
+      headers: { apikey: supabaseAnonKey },
       signal: controller.signal
     })
     return true
@@ -118,6 +123,11 @@ async function invokeFunction<T>(name: string, body: unknown): Promise<T> {
 
 export interface CreateShareOptions {
   fileName?: string
+  /**
+   * Whether the recipient gets the "download everything as one ZIP" button.
+   * Omitted means the server default (allowed) applies.
+   */
+  allowBulkDownload?: boolean
   onProgress?: (percent: number, currentFileName: string, index: number) => void
 }
 
@@ -195,7 +205,8 @@ export async function createShareWithFiles(
   await invokeFunction<{ shareId: string; status: string }>('share-finalize', {
     shareId: session.shareId,
     fileName: options.fileName,
-    shareUrl
+    shareUrl,
+    allowBulkDownload: options.allowBulkDownload
   })
 
   options.onProgress?.(100, '', manifest.length)
