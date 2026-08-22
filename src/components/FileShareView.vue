@@ -197,6 +197,50 @@ const getFileTypeMeta = (filename: string) => {
 // Storage filename mapping
 const storageMap = ref<Record<string, string>>({})
 const pdfThumbnails = ref<Record<string, string>>({})
+const thumbnailRequested = new Set<string>()
+let thumbnailObserver: InstanceType<typeof window.IntersectionObserver> | null = null
+
+/**
+ * Drawing a PDF thumbnail means downloading the whole document. A share of ten
+ * scanned PDFs is 25 MB, and generating every thumbnail on mount pulled all of
+ * it before the reader had asked for anything — on a phone, on mobile data,
+ * ahead of the preview they actually tapped. Draw a row's thumbnail when that
+ * row comes into view instead.
+ */
+const requestThumbnail = (filename: string) => {
+  if (!filename.toLowerCase().endsWith('.pdf')) return
+  if (thumbnailRequested.has(filename)) return
+  thumbnailRequested.add(filename)
+  generatePdfThumbnail(getFileUrl(filename))
+    .then((thumbnailUrl) => {
+      pdfThumbnails.value[filename] = thumbnailUrl
+    })
+    .catch((err) => {
+      console.error(`Failed to generate thumbnail for ${filename}:`, err)
+    })
+}
+
+const startThumbnailObserver = () => {
+  thumbnailObserver?.disconnect()
+  if (typeof window.IntersectionObserver === 'undefined') {
+    // No observer to lean on: fall back to the old behaviour rather than
+    // leaving every row without a thumbnail.
+    shareData.value?.files_list.forEach(requestThumbnail)
+    return
+  }
+  thumbnailObserver = new window.IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        const filename = (entry.target as HTMLElement).dataset.filename
+        if (filename) requestThumbnail(filename)
+        thumbnailObserver?.unobserve(entry.target)
+      }
+    },
+    { rootMargin: '200px' }
+  )
+  document.querySelectorAll('[data-filename]').forEach((el) => thumbnailObserver?.observe(el))
+}
 // Filenames whose thumbnail failed to render (unsupported codec, 404, dead
 // object URL). They fall back to the generic file icon instead of leaving a
 // broken-image glyph in the row.
@@ -270,19 +314,8 @@ const fetchShareDetails = async () => {
       console.error('Failed to list files from storage:', storageErr)
     }
 
-    // Automatically generate thumbnails for any PDFs in the share list
-    data.files_list.forEach((filename: string) => {
-      if (filename.toLowerCase().endsWith('.pdf')) {
-        const url = getFileUrl(filename)
-        generatePdfThumbnail(url)
-          .then((thumbnailUrl) => {
-            pdfThumbnails.value[filename] = thumbnailUrl
-          })
-          .catch((err) => {
-            console.error(`Failed to generate thumbnail for ${filename}:`, err)
-          })
-      }
-    })
+    // Thumbnails are drawn only for the rows the reader can actually see; the
+    // observer is attached once the list is on the page, below.
   } catch (err: any) {
     console.error('Failed to load share metadata:', err)
     error.value = isNetworkFailure(err)
@@ -290,6 +323,9 @@ const fetchShareDetails = async () => {
       : err.message || t('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
+    // The file rows only exist once `loading` is false, so the observer has to
+    // wait for that render before it has anything to watch.
+    if (shareData.value) nextTick(startThumbnailObserver)
   }
 }
 
@@ -773,6 +809,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handlePreviewKeys)
+  thumbnailObserver?.disconnect()
+  thumbnailObserver = null
 })
 </script>
 
@@ -896,6 +934,7 @@ onBeforeUnmount(() => {
             <div
               v-for="filename in shareData.files_list"
               :key="filename"
+              :data-filename="filename"
               @click="openPreview(filename)"
               class="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-zinc-200/60 bg-white p-2 transition-all duration-300 hover:scale-[1.005] hover:border-blue-300 hover:bg-blue-50/5 hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/20 dark:hover:border-blue-800/60 dark:hover:bg-zinc-900/40 sm:p-3 md:p-3.5"
             >
