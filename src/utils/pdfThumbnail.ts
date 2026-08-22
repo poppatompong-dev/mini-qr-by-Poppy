@@ -10,41 +10,10 @@
 // precaching it would add ~1.3 MB to every first install.
 let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null
 
-const withCap = (promise: Promise<unknown>, ms: number) =>
-  Promise.race([promise, new Promise((resolve) => setTimeout(resolve, ms))])
-
-/**
- * A pdf.js worker started while the service worker is still installing does not
- * finish its handshake for the best part of a minute: on a first visit the
- * thumbnails and any preview opened alongside them sat on their spinner while
- * the very same call, made a moment later, returned in under 200ms. Wait for
- * the page to finish loading and for the registration to settle before touching
- * pdf.js at all.
- *
- * Every wait is capped, and a page with no service worker at all — the dev
- * server — falls straight through, since `navigator.serviceWorker.ready` would
- * otherwise never resolve.
- */
-const whenSafeToStartPdfJs = async (): Promise<void> => {
-  if (document.readyState !== 'complete') {
-    await withCap(
-      new Promise<void>((resolve) =>
-        window.addEventListener('load', () => resolve(), { once: true })
-      ),
-      5000
-    )
-  }
-  if (!('serviceWorker' in navigator) || navigator.serviceWorker.controller) return
-  const registrations = await navigator.serviceWorker.getRegistrations().catch(() => [])
-  if (registrations.length === 0) return
-  await withCap(navigator.serviceWorker.ready, 5000)
-}
-
 const loadPdfJs = (): Promise<typeof import('pdfjs-dist')> => {
   if (pdfjsPromise) return pdfjsPromise
 
   pdfjsPromise = (async () => {
-    await whenSafeToStartPdfJs()
     const pdfjsLib = await import('pdfjs-dist')
     // Vite resolves this to a hashed asset URL and emits the worker as its own
     // file, fetched from this origin the first time a PDF is opened.
