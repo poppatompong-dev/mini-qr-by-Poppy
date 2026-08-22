@@ -75,3 +75,64 @@ export const generatePdfThumbnail = async (fileOrUrl: File | string): Promise<st
     throw err
   }
 }
+
+/**
+ * Renders a PDF into `container` as one canvas per page, each sized to
+ * `targetWidth` CSS pixels.
+ *
+ * The preview modal used to hand the file to an `<iframe>` and let the browser
+ * draw it. Desktop Chrome has a built-in viewer so that looked fine, but iOS
+ * Safari and Android Chrome refuse to render a PDF in an iframe — the recipient
+ * got an empty box. Drawing the pages ourselves with the pdf.js that already
+ * ships for thumbnails works the same everywhere.
+ *
+ * @returns the page count of the document and how many pages were drawn.
+ */
+export const renderPdfPages = async (
+  url: string,
+  container: HTMLElement,
+  options: { targetWidth: number; maxPages?: number; signal?: { cancelled: boolean } }
+): Promise<{ pageCount: number; renderedPages: number }> => {
+  const pdfjsLib = await loadPdfJs()
+  const pdf = await pdfjsLib.getDocument({ url, disableRange: true, disableStream: true }).promise
+
+  try {
+    const maxPages = options.maxPages ?? 30
+    const pageCount = pdf.numPages
+    const renderedPages = Math.min(pageCount, maxPages)
+    // Phones are memory-tight; a device pixel ratio of 3 would triple the
+    // canvas area for no visible gain at this size.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const targetWidth = Math.max(options.targetWidth, 200)
+
+    container.innerHTML = ''
+
+    for (let pageNumber = 1; pageNumber <= renderedPages; pageNumber++) {
+      if (options.signal?.cancelled) break
+      const page = await pdf.getPage(pageNumber)
+      const baseViewport = page.getViewport({ scale: 1 })
+      const scale = (targetWidth / baseViewport.width) * dpr
+      const viewport = page.getViewport({ scale })
+
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Canvas context not available')
+      canvas.width = Math.floor(viewport.width)
+      canvas.height = Math.floor(viewport.height)
+      canvas.style.width = '100%'
+      canvas.style.height = 'auto'
+      canvas.style.display = 'block'
+      canvas.setAttribute('role', 'img')
+      canvas.setAttribute('aria-label', `PDF page ${pageNumber}`)
+
+      await page.render({ canvasContext: context, viewport }).promise
+      if (options.signal?.cancelled) break
+      container.appendChild(canvas)
+      page.cleanup()
+    }
+
+    return { pageCount, renderedPages }
+  } finally {
+    await pdf.destroy()
+  }
+}

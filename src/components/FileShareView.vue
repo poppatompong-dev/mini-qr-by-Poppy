@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from '@/utils/supabase'
 import { isValidShareId } from '@/utils/fileShareValidation'
 import { isNetworkFailure } from '@/utils/shareApi'
 import { downloadBlob } from '@/utils/download'
-import { generatePdfThumbnail } from '@/utils/pdfThumbnail'
+import { generatePdfThumbnail, renderPdfPages } from '@/utils/pdfThumbnail'
 import { isImageFilename } from '@/utils/imagePreview'
 import { resolveStorageName } from '@/utils/shareStorageNames'
 import { renderAsync as renderDocx } from 'docx-preview'
@@ -48,11 +48,26 @@ interface SharedFilesLog {
   status?: string
   expires_at?: string | null
   storage_prefix?: string | null
+  allow_bulk_download?: boolean | null
 }
 
 // Storage objects live under `storage_prefix` (falls back to the share id for
 // legacy records that predate the hardening migration).
 const storagePrefix = computed(() => shareData.value?.storage_prefix || props.shareId)
+
+// The creator can withhold the "everything as one ZIP" button — recipients on
+// phones often have no way to open the archive. Shares created before the
+// column existed read as null and keep the button.
+const bulkDownloadEnabled = computed(() => shareData.value?.allow_bulk_download !== false)
+
+// The share is named after the ZIP the creator configured. With the archive
+// button switched off there is no ZIP to speak of, so drop the extension
+// rather than promise a file the reader can never get.
+const shareTitle = computed(() => {
+  const name = shareData.value?.file_name || 'archive.zip'
+  if (bulkDownloadEnabled.value) return name
+  return name.replace(/\.zip$/i, '')
+})
 
 const loading = ref(true)
 const error = ref('')
@@ -323,6 +338,7 @@ const handleDownloadSingle = async (filename: string) => {
 // Download all as ZIP
 const handleDownloadAllZip = async () => {
   if (!shareData.value || !shareData.value.files_list.length) return
+  if (!bulkDownloadEnabled.value) return
 
   try {
     downloadingAll.value = true
@@ -602,6 +618,50 @@ const loadSheetTable = async (filename: string) => {
   }
 }
 
+// PDF preview state. Pages are drawn with pdf.js instead of handed to an
+// <iframe>, which mobile browsers refuse to render inline.
+const pdfContainer = ref<HTMLElement | null>(null)
+const pdfLoading = ref(false)
+const pdfError = ref(false)
+const pdfPageCount = ref(0)
+const pdfRenderedPages = ref(0)
+// Each rendered page holds a full-resolution canvas in memory, so a long
+// document would exhaust a phone before it finished. Draw the opening pages
+// and point the reader at the download for the rest.
+const MAX_PDF_PREVIEW_PAGES = 12
+// Switching files mid-render must abandon the in-flight pages, otherwise the
+// previous document keeps appending canvases into the new file's container.
+let pdfRenderToken: { cancelled: boolean } | null = null
+
+const renderPdfFile = async () => {
+  if (!previewBlobUrl.value || !pdfContainer.value) return
+  if (pdfRenderToken) pdfRenderToken.cancelled = true
+  const token = { cancelled: false }
+  pdfRenderToken = token
+
+  pdfLoading.value = true
+  pdfError.value = false
+  pdfPageCount.value = 0
+  pdfRenderedPages.value = 0
+  try {
+    const width = pdfContainer.value.clientWidth || 320
+    const result = await renderPdfPages(previewBlobUrl.value, pdfContainer.value, {
+      targetWidth: width,
+      maxPages: MAX_PDF_PREVIEW_PAGES,
+      signal: token
+    })
+    if (token.cancelled) return
+    pdfPageCount.value = result.pageCount
+    pdfRenderedPages.value = result.renderedPages
+  } catch (err) {
+    if (token.cancelled) return
+    console.error('Failed to render pdf file:', err)
+    pdfError.value = true
+  } finally {
+    if (!token.cancelled) pdfLoading.value = false
+  }
+}
+
 const renderDocxFile = async () => {
   if (!previewBlobUrl.value || !docxContainer.value) return
   docxLoading.value = true
@@ -646,9 +706,13 @@ watch([currentPreviewIndex, isPreviewOpen], async () => {
 })
 
 watch([previewBlobUrl, currentPreviewType], async () => {
-  if (isPreviewOpen.value && currentPreviewType.value === 'docx' && previewBlobUrl.value) {
+  if (!isPreviewOpen.value || !previewBlobUrl.value) return
+  if (currentPreviewType.value === 'docx') {
     await nextTick()
     await renderDocxFile()
+  } else if (currentPreviewType.value === 'pdf') {
+    await nextTick()
+    await renderPdfFile()
   }
 })
 
@@ -720,12 +784,20 @@ onBeforeUnmount(() => {
         {{ t('ดาวน์โหลดไฟล์ที่แชร์') || 'ดาวน์โหลดไฟล์ที่แชร์' }}
       </h2>
       <p class="text-xs text-zinc-500 dark:text-zinc-400">
-        {{
-          t(
+        <template v-if="bulkDownloadEnabled">
+          {{
+            t(
+              'คุณสามารถเลือกดาวน์โหลดแต่ละไฟล์ได้โดยตรง หรือบีบอัดเป็นไฟล์ ZIP เพื่อดาวน์โหลดทั้งหมด'
+            ) ||
             'คุณสามารถเลือกดาวน์โหลดแต่ละไฟล์ได้โดยตรง หรือบีบอัดเป็นไฟล์ ZIP เพื่อดาวน์โหลดทั้งหมด'
-          ) ||
-          'คุณสามารถเลือกดาวน์โหลดแต่ละไฟล์ได้โดยตรง หรือบีบอัดเป็นไฟล์ ZIP เพื่อดาวน์โหลดทั้งหมด'
-        }}
+          }}
+        </template>
+        <template v-else>
+          {{
+            t('แตะที่ไฟล์เพื่อดูตัวอย่าง หรือกดปุ่มดาวน์โหลดของแต่ละไฟล์เพื่อบันทึกทีละไฟล์') ||
+            'แตะที่ไฟล์เพื่อดูตัวอย่าง หรือกดปุ่มดาวน์โหลดของแต่ละไฟล์เพื่อบันทึกทีละไฟล์'
+          }}
+        </template>
       </p>
     </div>
 
@@ -789,8 +861,11 @@ onBeforeUnmount(() => {
               >
                 {{ t('ชื่อชุดข้อมูลไฟล์') || 'ชื่อชุดข้อมูลไฟล์' }}
               </span>
-              <h3 class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-200">
-                {{ shareData.file_name || 'archive.zip' }}
+              <h3
+                class="line-clamp-2 break-all text-sm font-bold leading-snug text-zinc-800 dark:text-zinc-200 sm:truncate sm:break-normal"
+                :title="shareTitle"
+              >
+                {{ shareTitle }}
               </h3>
             </div>
             <span
@@ -861,7 +936,14 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                  <!-- Phone screens cannot fit a long official filename on one
+                       line, and a single truncated line hides the part that
+                       tells two documents apart, so wrap to two lines there
+                       and only truncate once there is room. -->
+                  <p
+                    class="line-clamp-2 break-all text-sm font-bold leading-snug text-zinc-800 dark:text-zinc-100 sm:truncate sm:break-normal sm:leading-normal"
+                    :title="filename"
+                  >
                     {{ filename }}
                   </p>
                   <div class="mt-0.5 flex items-center gap-2">
@@ -879,7 +961,7 @@ onBeforeUnmount(() => {
               <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <button
                   @click.stop="openPreview(filename)"
-                  class="text-zinc-650 dark:hover:text-blue-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-2 text-xs font-bold transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/40 sm:px-3 sm:py-2"
+                  class="text-zinc-650 dark:hover:text-blue-450 flex size-10 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 text-xs font-bold transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/40 sm:size-auto sm:px-3 sm:py-2"
                   :title="t('ดูตัวอย่างไฟล์') || 'ดูตัวอย่างไฟล์'"
                 >
                   <Eye class="size-3.5" />
@@ -887,7 +969,7 @@ onBeforeUnmount(() => {
                 </button>
                 <button
                   @click.stop="handleDownloadSingle(filename)"
-                  class="text-zinc-650 dark:hover:text-emerald-450 flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-2 text-xs font-bold transition-all hover:border-emerald-200 hover:bg-emerald-50/40 hover:text-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/40 sm:px-3 sm:py-2"
+                  class="text-zinc-650 dark:hover:text-emerald-450 flex size-10 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 text-xs font-bold transition-all hover:border-emerald-200 hover:bg-emerald-50/40 hover:text-emerald-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/40 sm:size-auto sm:px-3 sm:py-2"
                   :title="t('ดาวน์โหลดไฟล์') || 'ดาวน์โหลดไฟล์'"
                 >
                   <Download class="size-3.5" />
@@ -898,8 +980,11 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Download All ZIP Button -->
-        <div class="border-t border-zinc-200/60 pt-5 dark:border-zinc-800/60">
+        <!-- Download All ZIP Button (creator can switch this off per share) -->
+        <div
+          v-if="bulkDownloadEnabled"
+          class="border-t border-zinc-200/60 pt-5 dark:border-zinc-800/60"
+        >
           <!-- ZIP Download State -->
           <div v-if="downloadingAll" class="space-y-2">
             <div
@@ -956,7 +1041,7 @@ onBeforeUnmount(() => {
         class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       >
         <div
-          class="glass-card flex h-[85vh] w-full flex-col rounded-t-3xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:h-[80vh] sm:max-w-3xl sm:rounded-2xl md:p-6"
+          class="glass-card flex h-[85vh] w-full flex-col rounded-t-3xl border border-zinc-200 bg-white p-3 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:h-[80vh] sm:max-w-3xl sm:rounded-2xl sm:p-5 md:p-6"
         >
           <!-- Modal Header -->
           <div
@@ -1098,19 +1183,22 @@ onBeforeUnmount(() => {
               >
             </div>
 
-            <!-- PDF Preview -->
+            <!-- PDF Preview — drawn with pdf.js so it works on phones too -->
             <div
               v-else-if="currentPreviewType === 'pdf'"
-              class="flex size-full flex-col items-center justify-center p-2"
+              class="flex size-full flex-col items-center overflow-auto p-0 sm:p-2"
             >
-              <div v-if="previewLoading" class="flex flex-col items-center justify-center py-20">
+              <div
+                v-if="previewLoading || pdfLoading"
+                class="flex flex-col items-center justify-center py-20"
+              >
                 <Loader2 class="size-8 animate-spin text-blue-600 dark:text-blue-400" />
                 <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
                   {{ t('กำลังโหลดเอกสาร PDF...') || 'กำลังโหลดเอกสาร PDF...' }}
                 </p>
               </div>
               <div
-                v-else-if="previewError"
+                v-else-if="previewError || pdfError"
                 class="flex flex-col items-center justify-center py-10 text-center text-red-500"
               >
                 <AlertCircle class="mb-2 size-8" />
@@ -1118,17 +1206,30 @@ onBeforeUnmount(() => {
                   {{ t('ไม่สามารถโหลดเอกสาร PDF นี้ได้') || 'ไม่สามารถโหลดเอกสาร PDF นี้ได้' }}
                 </p>
               </div>
-              <iframe
-                v-else
-                :src="previewBlobUrl"
-                class="h-[50vh] w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
-              ></iframe>
+              <div
+                v-show="!previewLoading && !pdfLoading && !previewError && !pdfError"
+                class="w-full max-w-2xl"
+              >
+                <div
+                  ref="pdfContainer"
+                  class="w-full space-y-3 overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                ></div>
+                <p
+                  v-if="pdfPageCount > pdfRenderedPages"
+                  class="mt-2 text-center text-[11px] text-zinc-500 dark:text-zinc-400"
+                >
+                  {{ t('แสดงตัวอย่าง') || 'แสดงตัวอย่าง' }} {{ pdfRenderedPages }}/{{
+                    pdfPageCount
+                  }}
+                  {{ t('หน้า ดาวน์โหลดไฟล์เพื่อดูทั้งหมด') || 'หน้า ดาวน์โหลดไฟล์เพื่อดูทั้งหมด' }}
+                </p>
+              </div>
             </div>
 
             <!-- Docx Preview -->
             <div
               v-else-if="currentPreviewType === 'docx'"
-              class="flex size-full flex-col items-center overflow-auto p-4"
+              class="flex size-full flex-col items-center overflow-auto p-0 sm:p-4"
             >
               <div
                 v-if="previewLoading || docxLoading"
@@ -1154,7 +1255,7 @@ onBeforeUnmount(() => {
               <div
                 v-show="!previewLoading && !docxLoading && !previewError && !docxError"
                 ref="docxContainer"
-                class="w-full max-w-2xl overflow-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                class="w-full max-w-2xl overflow-auto rounded-lg border border-zinc-200 bg-white p-0 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-4"
               ></div>
             </div>
 
@@ -1317,11 +1418,32 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* docx-preview lays each page out at the document's own paper width (~794px
+   for A4). That is wider than the preview panel on every phone and on desktop
+   too, so the page used to be clipped on both sides with no way to scroll to
+   the rest. Let the document reflow to the panel instead. */
 :deep(.docx-preview-container) {
   background: transparent !important;
   padding: 0 !important;
 }
-:deep(.docx-preview-container > section.docx) {
+
+:deep(.docx-preview-container-wrapper),
+:deep(.docx-preview-container),
+:deep(.docx-preview-container > *) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+:deep(.docx-preview-container > section.docx),
+:deep(.docx-preview-container > article),
+:deep(.docx-preview-container > header) {
+  min-height: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+:deep(.docx-preview-container > section.docx),
+:deep(.docx-preview-container > article) {
   margin-bottom: 2rem !important;
   box-shadow:
     0 4px 6px -1px rgb(0 0 0 / 0.1),
@@ -1330,10 +1452,31 @@ onBeforeUnmount(() => {
   border-radius: 8px !important;
   background-color: #ffffff !important;
   color: #18181b !important;
-  padding: 2rem !important;
+  padding: 1rem !important;
 }
-.dark :deep(.docx-preview-container > section.docx) {
+
+@media (min-width: 640px) {
+  :deep(.docx-preview-container > section.docx),
+  :deep(.docx-preview-container > article) {
+    padding: 2rem !important;
+  }
+}
+
+.dark :deep(.docx-preview-container > section.docx),
+.dark :deep(.docx-preview-container > article) {
   border-color: #27272a !important;
+}
+
+/* Images and tables inside the document keep their authored print widths, so
+   clamp them too or they push the page back out. */
+:deep(.docx-preview-container img) {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+:deep(.docx-preview-container table) {
+  max-width: 100% !important;
+  table-layout: fixed !important;
 }
 
 /* slide-up bottom sheet transition */

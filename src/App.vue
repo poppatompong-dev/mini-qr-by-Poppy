@@ -338,7 +338,7 @@ const isModeToggleDisabled = computed(() => {
 
     <!-- Mobile sticky header - only visible on mobile -->
     <div
-      class="scroll-header-container fixed left-1/2 top-0 z-50 w-full max-w-md -translate-x-1/2 px-4 pt-3 md:hidden"
+      class="scroll-header-container fixed left-1/2 top-0 z-50 w-full max-w-md px-4 pt-3 md:hidden"
       :class="{ 'header-collapsed': isHeaderCollapsed }"
     >
       <div class="flex justify-center">
@@ -465,7 +465,7 @@ const isModeToggleDisabled = computed(() => {
     <div
       class="grid w-full flex-1 place-items-center items-start bg-transparent px-3 py-6 pb-16 pt-20 md:p-8"
     >
-      <div class="w-full lg:w-5/6">
+      <div class="w-full min-w-0 lg:w-5/6">
         <!-- 1. Luxury Hero Section (Visible in Create and Scan Modes) -->
         <section
           v-if="appMode === AppMode.Create || appMode === AppMode.Scan"
@@ -724,12 +724,16 @@ const isModeToggleDisabled = computed(() => {
 }
 
 /* Scroll-aware header styles */
+/* The horizontal centering lives here rather than on a Tailwind utility: the
+   collapsed state sets `transform` outright, so a utility-provided translate
+   would be wiped out and the bar would jump half its width to the right. */
 .scroll-header-container {
+  transform: translateX(-50%);
   transition: transform 0.3s ease;
 }
 
 .header-collapsed {
-  transform: translateY(-40%);
+  transform: translate(-50%, -40%);
 }
 
 .header-collapsed button {
